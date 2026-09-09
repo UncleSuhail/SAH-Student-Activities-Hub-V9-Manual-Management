@@ -363,6 +363,7 @@ Object.assign(SAH_TEXT_EN,{"تم اختيارك للمشاركة":"You Were Sele
 Object.assign(SAH_TEXT_EN,{"الفعاليات المتاحة":"Available Events","طلبات المشاركين":"Participant Applications","الرجوع":"Back","العودة إلى الصفحة الرئيسية المخصصة لحسابك":"Return to your account home page","الميزانية السنوية المتبقية":"Remaining Annual Budget","إضافة / تعديل الميزانية":"Add / Edit Budget","تحديد الميزانية السنوية":"Set Annual Budget","الميزانية المطلوبة":"Requested Budget","حالة الحدث":"Event Status"});
 Object.assign(SAH_TEXT_EN,{"روابط سريعة":"Quick Links","روابط رسمية مهمة لطلبة الجامعة.":"Important official links for university students.","التقويم الأكاديمي":"Academic Calendar","الموقع الرئيسي":"Main Website","حالة جميع الطلبات":"All Request Statuses","ملخص القرارات":"Decision Summary","اضغط على أي حالة لعرض الطلبات المرتبطة بها مباشرة في الجدول.":"Click any status to view the related requests directly in the table.","إجمالي الطلبات":"Total Requests","الموافقات":"Approved","الرفض":"Rejected","قيد المراجعة":"Under Review","جميع الطلبات":"All Requests","طلبات تمت الموافقة عليها":"Approved requests","طلبات تم رفضها":"Rejected requests","بانتظار اتخاذ القرار":"Awaiting decision"});
 Object.assign(SAH_TEXT_EN,{"جدول الاختبارات النهائية":"Final Exams Schedule"});
+Object.assign(SAH_TEXT_EN,{"المقاعد المتبقية":"Remaining Seats","اكتملت المقاعد":"Seats Full","من أصل":"of","ينخفض العدد تلقائيًا مع كل مشارك يتم قبوله.":"The number decreases automatically with each accepted participant.","تم إغلاق القبول تلقائيًا لاكتمال السعة.":"Registration is automatically closed because capacity is full."});
 Object.assign(SAH_TEXT_EN,{"التقرير":"Report","مسجل":"Registered","غير مسجل":"Not Registered","سبب الإنهاء المبكر":"Early End Reason","عدد المستفيدين المتوقع":"Expected Beneficiaries","وقت بدء الحدث":"Event Start Time","الحدث المرتبط بالتقرير":"Linked Event","مقاعد شاغرة":"Vacant Seats","إلغاء المشاركة":"Cancel Participation","إلغاء الرفض":"Undo Rejection","يجب تسجيل تقرير الحدث أولًا":"Event Report Required","الانتقال إلى إضافة نشاط":"Go to Add Activity"});
 const SAH_TEXT_AR = Object.fromEntries(Object.entries(SAH_TEXT_EN).map(([ar,en])=>[en,ar]));
 const SAH_PHRASES = Object.entries(SAH_TEXT_EN).sort((a,b)=>b[0].length-a[0].length);
@@ -6906,10 +6907,9 @@ function roleCanEditMeetings(){
 }
 
 function allBudgetRows(){
-  const directActivities=(window.getFilteredEvidence?.()||window.SAH_DATA?.evidenceRecords||[])
-    .filter(row=>Number(row.budget)>0)
-    .map(row=>({id:row.recordKey||row.id,name:row.activity||'نشاط مسجل',kind:'نشاط مسجل',submittedBy:'عمادة شؤون الطلاب',status:'مقبول',budget:Number(row.budget)||0}));
-
+  // V32.2: the budget ledger is driven by submitted event/activity requests,
+  // not by their reports. This prevents a documented activity from being
+  // counted twice (once as a request and again as a report/evidence record).
   const stores=[
     ['sah-v22-sports','بطولة/حدث رياضي'],
     ['sah-v22-club-events','مبادرة/فعالية نادي'],
@@ -6917,34 +6917,63 @@ function allBudgetRows(){
     [V30.councilActivities,'نشاط المجلس الطلابي']
   ];
   const rows=[];
+  const seen=new Set();
+
   stores.forEach(([key,kind])=>{
-    readV30(key,[]).forEach(row=>rows.push({...row,kind}));
+    readV30(key,[]).forEach(row=>{
+      const budget=Number(row.budget)||0;
+      if(budget<=0)return;
+
+      const signature=String(row.id||row.requestId||`${key}|${row.name||''}|${row.date||''}|${budget}`);
+      if(seen.has(signature))return;
+      seen.add(signature);
+
+      rows.push({...row,kind,budget,__budgetStore:key});
+    });
   });
-  return [...rows,...directActivities].filter(row=>Number(row.budget)>0);
+
+  return rows;
 }
 
 function renderBudgetDashboard(){
   const rows=allBudgetRows();
-  const approved=rows.filter(row=>row.status==='مقبول'||row.status==='معتمد نهائيًا');
-  const pending=rows.filter(row=>!['مقبول','معتمد نهائيًا','مرفوض','مرفوض من العمادة'].includes(row.status||'تحت المراجعة'));
+  const isApproved=row=>['مقبول','معتمد نهائيًا','approved','accepted'].includes(String(row.status||'').trim().toLowerCase());
+  const isRejected=row=>['مرفوض','مرفوض من العمادة','rejected'].includes(String(row.status||'').trim().toLowerCase());
+
+  const approved=rows.filter(isApproved);
+  const pending=rows.filter(row=>!isApproved(row)&&!isRejected(row));
   const sum=list=>list.reduce((total,row)=>total+(Number(row.budget)||0),0);
   const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+
   const approvedSum=sum(approved);
   const pendingSum=sum(pending);
-  const totalSum=sum(rows);
+  const annual=typeof v309AnnualBudget==='function'?v309AnnualBudget():0;
+  const remaining=annual-approvedSum;
 
+  // These are the three authoritative financial figures:
+  // spent = approved activities across all departments,
+  // requested = pending activities only,
+  // annual remaining = Dean annual budget minus spent.
   set('generalApprovedBudget',money(approvedSum));
   set('generalRequestedBudget',money(pendingSum));
-  set('generalTotalBudget',money(totalSum));
+  set('generalAnnualBudgetRemaining',money(remaining));
+
+  const annualCaption=document.getElementById('generalAnnualBudgetCaption');
+  if(annualCaption){
+    annualCaption.textContent=remaining<0
+      ? `الميزانية السنوية ${money(annual)} — المصروف ${money(approvedSum)} — عجز ${money(Math.abs(remaining))}`
+      : `الميزانية السنوية ${money(annual)} — المصروف ${money(approvedSum)} — المتبقي ${money(remaining)}`;
+  }
 
   const setRing=(selector,percent)=>{
     const element=document.querySelector(selector);
-    if(element)element.style.setProperty('--ring-p',Math.max(0,Math.min(100,percent||0)));
+    if(element)element.style.setProperty('--ring-p',Math.max(0,Math.min(100,Number(percent)||0)));
   };
-  const denominator=Math.max(1,totalSum);
-  setRing('.general-kpi-card.approved-budget',Math.round(approvedSum/denominator*100));
-  setRing('.general-kpi-card.requested-budget',Math.round(pendingSum/denominator*100));
-  setRing('.general-kpi-card.total-budget',100);
+
+  const annualBase=Math.max(1,annual);
+  setRing('.general-kpi-card.approved-budget',annual>0?approvedSum/annualBase*100:0);
+  setRing('.general-kpi-card.requested-budget',annual>0?pendingSum/annualBase*100:0);
+  setRing('#generalAnnualBudgetCard',annual>0?remaining/annualBase*100:0);
 
   document.querySelectorAll('[data-budget-filter]').forEach(button=>{
     button.onclick=()=>{
@@ -6953,11 +6982,19 @@ function renderBudgetDashboard(){
       const panel=document.getElementById('generalBudgetDetails');
       const body=document.getElementById('generalBudgetDetailsRows');
       const title=document.getElementById('generalBudgetDetailsTitle');
-      if(title)title.textContent=filter==='approved'?'الميزانية المصروفة':filter==='pending'?'الميزانية المطلوبة':'إجمالي الميزانيات المقدمة';
+
+      if(title)title.textContent=filter==='approved'?'الميزانية المصروفة':filter==='pending'?'الميزانية المطلوبة':'تفاصيل الميزانيات';
+
       if(body)body.innerHTML=selected.length?selected.map(row=>`<tr>
-        <td><strong>${row.name||'—'}</strong></td><td>${row.kind||'—'}</td>
-        <td>${row.submittedBy||'—'}</td><td>${row.status||'تحت المراجعة'}</td><td>${money(row.budget)}</td>
-      </tr>`).join(''):'<tr><td colspan="5">لا توجد بيانات.</td></tr>';
+        <td><strong>${row.name||'—'}</strong></td>
+        <td>${row.kind||'—'}</td>
+        <td>${row.submittedBy||row.owner||'—'}</td>
+        <td>${row.date||row.submittedAt||'—'}</td>
+        <td>${row.status||'تحت المراجعة'}</td>
+        <td>${row.finished?'<span class="budget-event-state finished">منتهي</span>':'<span class="budget-event-state active">قائم / غير منتهي</span>'}</td>
+        <td><strong>${money(row.budget)}</strong></td>
+      </tr>`).join(''):'<tr><td colspan="7">لا توجد بيانات.</td></tr>';
+
       panel?.classList.remove('hidden');
       panel?.scrollIntoView({behavior:'smooth',block:'start'});
     };
@@ -7667,19 +7704,41 @@ function v309BudgetRows(){
   return [];
 }
 function v309ApprovedSpent(){
-  return v309BudgetRows().filter(r=>r.status==='مقبول'||r.status==='معتمد نهائيًا').reduce((s,r)=>s+(Number(r.budget)||0),0);
+  return v309BudgetRows()
+    .filter(r=>['مقبول','معتمد نهائيًا','approved','accepted'].includes(String(r.status||'').trim().toLowerCase()))
+    .reduce((s,r)=>s+(Number(r.budget)||0),0);
 }
 function v309RenderAnnualBudget(){
   const total=v309AnnualBudget();
   const spent=v309ApprovedSpent();
-  const remaining=Math.max(0,total-spent);
-  const el=document.getElementById('generalAnnualBudgetRemaining');if(el)el.textContent=v309Money(remaining);
-  const caption=document.getElementById('generalAnnualBudgetCaption');if(caption)caption.textContent=`من أصل ${v309Money(total)} — المصروف ${v309Money(spent)}`;
+  const remaining=total-spent;
+
+  const el=document.getElementById('generalAnnualBudgetRemaining');
+  if(el)el.textContent=v309Money(remaining);
+
+  const caption=document.getElementById('generalAnnualBudgetCaption');
+  if(caption){
+    caption.textContent=remaining<0
+      ? `من أصل ${v309Money(total)} — المصروف ${v309Money(spent)} — عجز ${v309Money(Math.abs(remaining))}`
+      : `من أصل ${v309Money(total)} — المصروف ${v309Money(spent)} — المتبقي ${v309Money(remaining)}`;
+  }
+
   const card=document.getElementById('generalAnnualBudgetCard');
-  if(card)card.style.setProperty('--ring-p',total>0?Math.round(remaining/total*100):0);
-  const cur=document.getElementById('annualBudgetCurrentValue');if(cur)cur.textContent=v309Money(total);
-  const spentText=document.getElementById('annualBudgetSpentSummary');if(spentText)spentText.textContent=`المصروف المعتمد: ${v309Money(spent)} — المتبقي: ${v309Money(remaining)}`;
-  const input=document.getElementById('annualBudgetInput');if(input&&!input.matches(':focus'))input.value=total||'';
+  if(card)card.style.setProperty('--ring-p',total>0?Math.max(0,Math.min(100,Math.round(remaining/total*100))):0);
+
+  const cur=document.getElementById('annualBudgetCurrentValue');
+  if(cur)cur.textContent=v309Money(total);
+
+  const spentText=document.getElementById('annualBudgetSpentSummary');
+  if(spentText){
+    spentText.textContent=remaining<0
+      ? `المصروف المعتمد: ${v309Money(spent)} — العجز: ${v309Money(Math.abs(remaining))}`
+      : `المصروف المعتمد: ${v309Money(spent)} — المتبقي: ${v309Money(remaining)}`;
+  }
+
+  const input=document.getElementById('annualBudgetInput');
+  if(input&&!input.matches(':focus'))input.value=total||'';
+
   const edit=document.getElementById('openAnnualBudgetEditor');
   if(edit)edit.hidden=v309Role()!=='dean';
 }
@@ -7745,7 +7804,7 @@ function v309Bind(){
     const rejectOpen=e.target.closest('.council-participant-reject-open');if(rejectOpen){rejectOpen.closest('.council-participant-actions')?.querySelector('.council-participant-reject-editor')?.classList.remove('hidden');return;}
     const reject=e.target.closest('.council-participant-reject-confirm');if(reject){const editor=reject.closest('.council-participant-reject-editor');const reason=editor?.querySelector('input')?.value.trim();if(!reason){window.showToast?.('سبب الرفض إلزامي.');return;}v309SaveCouncilApplicant(reject.dataset.id,'مرفوض',reason);return;}
   },true);
-  document.getElementById('saveAnnualBudget')?.addEventListener('click',()=>{if(v309Role()!=='dean')return;const value=Number(document.getElementById('annualBudgetInput')?.value);if(!Number.isFinite(value)||value<0){window.showToast?.('أدخل ميزانية سنوية صحيحة.');return;}v309SetAnnualBudget(value);v309RenderAnnualBudget();v309CloseAnnualBudget();window.showToast?.('تم تحديث الميزانية السنوية بنجاح.');});
+  document.getElementById('saveAnnualBudget')?.addEventListener('click',()=>{if(v309Role()!=='dean')return;const value=Number(document.getElementById('annualBudgetInput')?.value);if(!Number.isFinite(value)||value<0){window.showToast?.('أدخل ميزانية سنوية صحيحة.');return;}v309SetAnnualBudget(value);renderBudgetDashboard?.();v309RenderAnnualBudget();v309CloseAnnualBudget();window.showToast?.('تم تحديث الميزانية السنوية وإعادة احتساب الرصيد المتبقي.');});
   document.getElementById('councilApplicantSearch')?.addEventListener('input',v309RenderCouncilApplicants);
   document.getElementById('councilApplicantStatus')?.addEventListener('change',v309RenderCouncilApplicants);
   document.getElementById('councilViewRole')?.addEventListener('change',v309RenderCouncilApplicants);
@@ -7854,7 +7913,59 @@ function acceptedFor(id){return apps().filter(a=>String(a.requestId)===String(id
 function pendingFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&(!a.status||a.status==='تحت المراجعة')).length}
 function rejectedFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&a.status==='مرفوض').length}
 function participantScopeIds(scope){return {sports:['sportsApplicantRows','sportsApplicantSearch','sportsApplicantStatus'],club:['clubApplicantRows','clubApplicantSearch','clubApplicantStatus'],volunteer:['volunteerApplicantRows','volunteerApplicantSearch','volunteerApplicantStatus'],council:['councilApplicantRows','councilApplicantSearch','councilApplicantStatus']}[scope]}
-function renderIndex(scope){const events=eventList(scope), index=document.getElementById(`${scope}ParticipantEventIndex`);if(!index)return;if(!v32Selected[scope]||!events.some(e=>String(e.id)===String(v32Selected[scope])))v32Selected[scope]=events[0]?.id||'';index.innerHTML=events.length?events.map(e=>{const ac=acceptedFor(e.id),pc=pendingFor(e.id),rc=rejectedFor(e.id),cap=Number(e.capacity)||0,vac=Math.max(0,cap-ac);return `<button type="button" class="participant-event-card ${String(v32Selected[scope])===String(e.id)?'active':''}" data-select-participant-event="${e.id}" data-scope="${scope}"><span>${e.name}</span><small>${e.date}</small><div><b>${ac}<i>مقبول</i></b><b>${pc}<i>مراجعة</i></b><b>${rc}<i>مرفوض</i></b><b class="vacant">${vac}<i>مقاعد شاغرة</i></b></div>${reportBadgeFor(e,e.__store)}</button>`}).join(''):'<div class="participant-index-empty">لا توجد فعاليات معتمدة.</div>';renderParticipants(scope)}
+function renderIndex(scope){
+  const events=eventList(scope), index=document.getElementById(`${scope}ParticipantEventIndex`);
+  if(!index)return;
+
+  if(!v32Selected[scope]||!events.some(e=>String(e.id)===String(v32Selected[scope])))
+    v32Selected[scope]=events[0]?.id||'';
+
+  index.innerHTML=events.length?events.map(e=>{
+    const ac=acceptedFor(e.id);
+    const pc=pendingFor(e.id);
+    const rc=rejectedFor(e.id);
+    const cap=Math.max(0,Number(e.capacity)||0);
+    const vac=cap>0?Math.max(0,cap-ac):0;
+    const fill=cap>0?Math.max(0,Math.min(100,Math.round(ac/cap*100))):0;
+    const full=cap>0&&vac===0;
+
+    return `<button type="button"
+      class="participant-event-card ${String(v32Selected[scope])===String(e.id)?'active':''}"
+      data-select-participant-event="${e.id}"
+      data-scope="${scope}">
+        <span>${e.name}</span>
+        <small>${e.date}</small>
+
+        <div class="participant-event-stats">
+          <b>${ac}<i>مقبول</i></b>
+          <b>${pc}<i>مراجعة</i></b>
+          <b>${rc}<i>مرفوض</i></b>
+          <b class="vacant">${vac}<i>مقاعد شاغرة</i></b>
+        </div>
+
+        <div class="participant-capacity-panel ${full?'is-full':''}">
+          <div class="participant-capacity-copy">
+            <span class="participant-capacity-label">${full?'اكتملت المقاعد':'المقاعد المتبقية'}</span>
+            <strong>${vac}</strong>
+            <small>${cap>0?`من أصل ${cap} مقعد`:'لم تحدد سعة للمشاركة'}</small>
+          </div>
+
+          <div class="participant-capacity-progress-wrap">
+            <div class="participant-capacity-progress-head">
+              <span>${cap>0?`${ac} مقبول من ${cap}`:`${ac} مقبول`}</span>
+              <b>${cap>0?fill:0}%</b>
+            </div>
+            <div class="participant-capacity-track" aria-label="نسبة امتلاء المقاعد">
+              <span style="width:${cap>0?fill:0}%"></span>
+            </div>
+            <small>${full?'تم إغلاق القبول تلقائيًا لاكتمال السعة.':'ينخفض العدد تلقائيًا مع كل مشارك يتم قبوله.'}</small>
+          </div>
+        </div>
+      </button>`;
+  }).join(''):'<div class="participant-index-empty">لا توجد فعاليات معتمدة.</div>';
+
+  renderParticipants(scope);
+}
 function participantAction(a,event,scope){const cap=Number(event.capacity)||0, ac=acceptedFor(event.id), full=cap>0&&ac>=cap;if(a.status==='مقبول')return `<div class="participant-final accepted"><span>مقبول</span><button class="v32-cancel-accept" data-id="${a.id}" data-scope="${scope}" type="button">إلغاء المشاركة</button><div class="v32-cancel-accept-editor hidden"><input maxlength="160" placeholder="سبب إلغاء القبول — 15 كلمة كحد أقصى"><button class="v32-confirm-cancel-accept" data-id="${a.id}" data-scope="${scope}" type="button">تأكيد</button></div></div>`;if(a.status==='مرفوض')return `<div class="participant-final rejected"><span>مرفوض</span><button class="v32-undo-reject" data-id="${a.id}" data-scope="${scope}" type="button">إلغاء الرفض</button></div>`;return `<div class="participant-pending-actions"><button class="v32-accept-participant" data-id="${a.id}" data-scope="${scope}" type="button" ${full?'disabled':''}>${full?'اكتملت المقاعد':'قبول'}</button><button class="v32-reject-participant" data-id="${a.id}" data-scope="${scope}" type="button">رفض</button><div class="v32-reject-editor hidden"><input placeholder="سبب الرفض"><button class="v32-confirm-reject" data-id="${a.id}" data-scope="${scope}" type="button">تأكيد</button></div></div>`}
 function renderParticipants(scope){const ids=participantScopeIds(scope);if(!ids)return;const [tbodyId,searchId,statusId]=ids,body=document.getElementById(tbodyId);if(!body)return;const event=eventList(scope).find(e=>String(e.id)===String(v32Selected[scope]));if(!event){body.innerHTML='<tr><td colspan="8">اختر حدثًا لعرض المشاركين.</td></tr>';return}const q=(document.getElementById(searchId)?.value||'').toLowerCase(),st=document.getElementById(statusId)?.value||'all';let rows=apps().filter(a=>String(a.requestId)===String(event.id)&&!a.closedByEventEnd&&a.status!=='انتهى الحدث');rows=rows.filter(a=>st==='all'||String(a.status||'تحت المراجعة')===st).filter(a=>!q||[a.student?.name,a.student?.studentId,a.student?.email,a.student?.phone].join(' ').toLowerCase().includes(q));body.innerHTML=rows.length?rows.map(a=>`<tr><td><strong>${event.name}</strong></td><td>${a.student?.name||'—'}</td><td>${a.student?.studentId||'—'}</td><td>${a.student?.email||'—'}</td><td>${a.student?.age||'—'}</td><td>${a.student?.gender||'—'}</td><td>${a.student?.phone||'—'}</td><td>${participantAction(a,event,scope)}</td></tr>`).join(''):'<tr><td colspan="8">لا توجد طلبات مشاركين مطابقة.</td></tr>'}
 function updateApp(id,fn){const aa=apps(),a=aa.find(x=>x.id===id);if(!a)return;fn(a);write(V32.apps,aa);window.renderAll?.();setTimeout(refresh,40)}
@@ -7862,153 +7973,5 @@ function acceptParticipant(id,scope){const a=apps().find(x=>x.id===id),event=eve
 function exportParticipants(scope,type){const event=eventList(scope).find(e=>String(e.id)===String(v32Selected[scope]));if(!event){window.showToast?.('اختر حدثًا أولًا.');return}const rows=apps().filter(a=>String(a.requestId)===String(event.id));const data=rows.map((a,i)=>[i+1,a.student?.name||'',a.student?.studentId||'',a.student?.email||'',a.student?.phone||'',a.student?.gender||'',a.status||'تحت المراجعة']);if(type==='excel'){const csv='\ufeff'+[['#','الاسم','الرقم الجامعي','الإيميل','الجوال','الجنس','الحالة'],...data].map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`participants-${event.name}.csv`;a.click();URL.revokeObjectURL(url)}else{const w=window.open('','_blank');w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>${event.name}</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccd6e5;padding:8px;text-align:right}th{background:#eef4ff}</style></head><body><h2>${event.name}</h2><p>عدد المشاركين: ${rows.length} — المقبولون: ${acceptedFor(event.id)}</p><table><thead><tr><th>#</th><th>الاسم</th><th>الرقم الجامعي</th><th>الإيميل</th><th>الجوال</th><th>الجنس</th><th>الحالة</th></tr></thead><tbody>${data.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}}
 function refresh(){migrate();['sports','club','volunteer','council'].forEach(renderIndex);populateReportEvents();document.querySelectorAll('.finish-event-btn').forEach(()=>{});}
 function bind(){document.addEventListener('click',e=>{const finish=e.target.closest('.finish-event-btn');if(finish){e.preventDefault();e.stopImmediatePropagation();requestFinish(finish.dataset.finishStore,finish.dataset.finishId);return}const go=e.target.closest('#goToEventReport');if(go){goReport();return}if(e.target.closest('[data-close-report-required]')){closeReportRequired();return}if(e.target.closest('[data-close-early-finish]')){closeEarly();return}const cf=e.target.closest('#confirmEarlyFinish');if(cf){confirmEarly();return}const normal=e.target.closest('#confirmFinishEvent');if(normal&&v32PendingFinish){e.preventDefault();e.stopImmediatePropagation();confirmNormalFinish();return}const sel=e.target.closest('[data-select-participant-event]');if(sel){v32Selected[sel.dataset.scope]=sel.dataset.selectParticipantEvent;renderIndex(sel.dataset.scope);return}const ex=e.target.closest('[data-participant-export]');if(ex){exportParticipants(ex.dataset.scope,ex.dataset.participantExport);return}const ac=e.target.closest('.v32-accept-participant');if(ac){acceptParticipant(ac.dataset.id,ac.dataset.scope);return}const ro=e.target.closest('.v32-reject-participant');if(ro){ro.closest('.participant-pending-actions')?.querySelector('.v32-reject-editor')?.classList.remove('hidden');return}const rc=e.target.closest('.v32-confirm-reject');if(rc){const ed=rc.closest('.v32-reject-editor'),reason=ed?.querySelector('input')?.value.trim();if(!reason){window.showToast?.('سبب الرفض إلزامي.');return}updateApp(rc.dataset.id,a=>{a.status='مرفوض';a.reason=reason});return}const ca=e.target.closest('.v32-cancel-accept');if(ca){ca.closest('.participant-final')?.querySelector('.v32-cancel-accept-editor')?.classList.remove('hidden');return}const cc=e.target.closest('.v32-confirm-cancel-accept');if(cc){const ed=cc.closest('.v32-cancel-accept-editor'),input=ed?.querySelector('input'),reason=input?.value.trim()||'',wc=reason.split(/\s+/).filter(Boolean).length;if(!reason){window.showToast?.('سبب إلغاء المشاركة إلزامي.');return}if(wc>15){window.showToast?.('سبب إلغاء المشاركة لا يتجاوز 15 كلمة.');return}updateApp(cc.dataset.id,a=>{a.status='تحت المراجعة';a.acceptanceCancelledReason=reason;a.acceptanceCancelledAt=new Date().toISOString()});return}const ur=e.target.closest('.v32-undo-reject');if(ur){updateApp(ur.dataset.id,a=>{a.status='تحت المراجعة';a.reason='';a.rejectionCancelledAt=new Date().toISOString()});return}},true);document.getElementById('activitySourceEvent')?.addEventListener('change',e=>autofillReport(e.target));document.getElementById('openAddActivity')?.addEventListener('click',()=>setTimeout(()=>populateReportEvents(v32PendingReport),80));document.getElementById('saveNewActivity')?.addEventListener('click',()=>setTimeout(refresh,260));document.getElementById('earlyFinishReason')?.addEventListener('input',e=>{const words=e.target.value.trim().split(/\s+/).filter(Boolean);if(words.length>15)e.target.value=words.slice(0,15).join(' ');document.getElementById('earlyFinishWordCount').textContent=e.target.value.trim()?e.target.value.trim().split(/\s+/).length:0});['sportsApplicantSearch','sportsApplicantStatus','clubApplicantSearch','clubApplicantStatus','volunteerApplicantSearch','volunteerApplicantStatus','councilApplicantSearch','councilApplicantStatus'].forEach(id=>document.getElementById(id)?.addEventListener(id.includes('Search')?'input':'change',()=>{const s=id.startsWith('sports')?'sports':id.startsWith('club')?'club':id.startsWith('volunteer')?'volunteer':'council';renderParticipants(s)}));document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!canCreateMore())blockCreateIfNeeded(e)},true)}
-window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();setTimeout(refresh,250);document.documentElement.dataset.sahBuild='32.0';console.info('SAH build 32.0 loaded')});
-})();
-
-
-/* ============================================================
-   SAH V32.1 — Authoritative annual-budget live deduction
-   ============================================================ */
-(()=>{
-  const ANNUAL_KEY='sah-v309-annual-budget';
-
-  const money=v=>{
-    const n=Number(String(v??0).replace(/[^\d.-]/g,''));
-    return Number.isFinite(n)?Math.max(0,n):0;
-  };
-
-  const annualBudget=()=>{
-    const raw=localStorage.getItem(ANNUAL_KEY);
-    if(!raw) return 0;
-    try{
-      const parsed=JSON.parse(raw);
-      return money(parsed?.amount ?? parsed?.value ?? parsed?.budget ?? parsed);
-    }catch(_){
-      return money(raw);
-    }
-  };
-
-  const requestRows=()=>{
-    try{
-      if(typeof allReq==='function') return allReq()||[];
-    }catch(_){}
-    const keys=[
-      'sah-v22-sports','sah-v22-clubs','sah-v22-club-events',
-      'sah-v22-vol','sah-v24-8-grant-applications','sah-v30-council-activities'
-    ];
-    return keys.flatMap(key=>{
-      try{
-        const rows=JSON.parse(localStorage.getItem(key)||'[]');
-        return Array.isArray(rows)?rows:[];
-      }catch(_){ return []; }
-    });
-  };
-
-  const isApproved=row=>{
-    const s=String(row?.status??row?.approvalStatus??'').trim().toLowerCase();
-    return ['مقبول','معتمد','تمت الموافقة','approved','accepted'].includes(s);
-  };
-
-  const rowBudget=row=>money(
-    row?.budget ?? row?.requestedBudget ?? row?.budgetRequested ??
-    row?.estimatedBudget ?? row?.activityBudget ?? row?.eventBudget ?? 0
-  );
-
-  const approvedSpend=()=>{
-    const seen=new Set();
-    return requestRows().reduce((sum,row)=>{
-      if(!isApproved(row)) return sum;
-      const id=String(row?.id ?? row?.requestId ?? row?.uid ?? '');
-      const signature=id || JSON.stringify([
-        row?.name,row?.title,row?.date,rowBudget(row),row?.kind,row?.store
-      ]);
-      if(seen.has(signature)) return sum;
-      seen.add(signature);
-      return sum+rowBudget(row);
-    },0);
-  };
-
-  const requestedPending=()=>{
-    const seen=new Set();
-    return requestRows().reduce((sum,row)=>{
-      if(isApproved(row)) return sum;
-      const s=String(row?.status??row?.approvalStatus??'').trim().toLowerCase();
-      if(['مرفوض','rejected'].includes(s)) return sum;
-      const id=String(row?.id ?? row?.requestId ?? row?.uid ?? '');
-      const signature=id || JSON.stringify([
-        row?.name,row?.title,row?.date,rowBudget(row),row?.kind,row?.store
-      ]);
-      if(seen.has(signature)) return sum;
-      seen.add(signature);
-      return sum+rowBudget(row);
-    },0);
-  };
-
-  const formatSAR=n=>{
-    try{
-      return new Intl.NumberFormat(document.documentElement.lang==='en'?'en-US':'ar-SA',
-        {maximumFractionDigits:2}).format(n)+' ر.س';
-    }catch(_){ return n.toFixed(2)+' ر.س'; }
-  };
-
-  window.SAHBudgetLedger={
-    annualBudget,
-    approvedSpend,
-    remaining:()=>Math.max(0,annualBudget()-approvedSpend()),
-    requestedPending
-  };
-
-  const paint=()=>{
-    const annual=annualBudget();
-    const spent=approvedSpend();
-    const remaining=Math.max(0,annual-spent);
-
-    const spentEl=document.getElementById('generalApprovedBudget');
-    const requestedEl=document.getElementById('generalRequestedBudget');
-    const remainingEl=document.getElementById('generalAnnualBudgetRemaining');
-    const caption=document.getElementById('generalAnnualBudgetCaption');
-
-    if(spentEl) spentEl.textContent=formatSAR(spent);
-    if(requestedEl) requestedEl.textContent=formatSAR(requestedPending());
-    if(remainingEl) remainingEl.textContent=formatSAR(remaining);
-    if(caption){
-      caption.textContent=document.documentElement.lang==='en'
-        ? `Annual budget ${formatSAR(annual)} − approved activities ${formatSAR(spent)}`
-        : `الميزانية السنوية ${formatSAR(annual)} − الفعاليات المعتمدة ${formatSAR(spent)}`;
-    }
-
-    const card=document.getElementById('generalAnnualBudgetCard');
-    if(card){
-      const pct=annual>0?Math.max(0,Math.min(100,(remaining/annual)*100)):0;
-      card.style.setProperty('--ring-p',pct.toFixed(2));
-      card.dataset.annualBudget=String(annual);
-      card.dataset.spentBudget=String(spent);
-      card.dataset.remainingBudget=String(remaining);
-    }
-  };
-
-  // Recalculate after every storage mutation and after approval UI actions.
-  const originalSet=Storage.prototype.setItem;
-  if(!Storage.prototype.__sahBudgetV321){
-    Storage.prototype.setItem=function(key,value){
-      originalSet.call(this,key,value);
-      if(String(key).startsWith('sah-')) queueMicrotask(paint);
-    };
-    Storage.prototype.__sahBudgetV321=true;
-  }
-
-  document.addEventListener('click',()=>setTimeout(paint,0),true);
-  window.addEventListener('storage',paint);
-  window.addEventListener('DOMContentLoaded',()=>{
-    paint();
-    setTimeout(paint,250);
-    setTimeout(paint,900);
-  });
-
-  // Dynamic pages can re-render the KPI nodes.
-  const observer=new MutationObserver(()=>paint());
-  window.addEventListener('DOMContentLoaded',()=>{
-    const root=document.getElementById('page-general-indicator');
-    if(root) observer.observe(root,{childList:true,subtree:true});
-  });
+window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();setTimeout(refresh,250);document.documentElement.dataset.sahBuild='32.3';console.info('SAH build 32.3 participant capacity loaded')});
 })();

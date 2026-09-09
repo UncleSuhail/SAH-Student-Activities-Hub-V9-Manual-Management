@@ -13570,7 +13570,169 @@ html[lang="ar"] .student-quick-link-card{
 .activity-form select.auto-event-field{pointer-events:none!important;background:#f2f5f9!important;color:#42536a!important}
 
 
-/* SAH V32.1 — remaining annual budget is always the live balance */
-#generalAnnualBudgetCard[data-annual-budget]{
-  transition:box-shadow .2s ease,transform .2s ease;
+/* ==========================================================
+   SAH V32.2 — clean annual-budget accounting
+   ========================================================== */
+.budget-event-state.finished{
+  display:inline-flex;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#edf8f1;
+  color:#26734a;
+  font-weight:900;
+  font-size:8px;
+}
+.budget-event-state.active{
+  display:inline-flex;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#0b55d9;
+  font-weight:900;
+  font-size:8px;
+}
+
+
+/* ==========================================================
+   SAH V32.3 — Participant capacity / remaining seats panel
+   ========================================================== */
+
+.participant-event-card .participant-event-stats{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-top:14px!important;
+}
+
+.participant-event-card .participant-event-stats>b{
+  min-height:48px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
+  border-radius:12px!important;
+  background:#f4f7fb!important;
+  color:#0d2f63!important;
+}
+
+.participant-event-card .participant-event-stats>b.vacant{
+  background:#edf8f1!important;
+  color:#237a4b!important;
+}
+
+.participant-capacity-panel{
+  display:grid!important;
+  grid-template-columns:minmax(150px,220px) minmax(0,1fr)!important;
+  gap:18px!important;
+  align-items:center!important;
+  width:100%!important;
+  margin-top:12px!important;
+  padding:14px 16px!important;
+  border:1px solid #d7e1ef!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,#fbfdff 0%,#f5f8fc 100%)!important;
+  box-sizing:border-box!important;
+}
+
+.participant-capacity-copy{
+  display:grid!important;
+  grid-template-columns:auto 1fr!important;
+  grid-template-areas:
+    "value label"
+    "value meta"!important;
+  align-items:center!important;
+  column-gap:10px!important;
+  row-gap:2px!important;
+  padding-inline-end:16px!important;
+  border-inline-end:1px solid #dce5f0!important;
+}
+
+.participant-capacity-copy strong{
+  grid-area:value!important;
+  font-size:30px!important;
+  line-height:1!important;
+  font-weight:950!important;
+  color:#0b55d9!important;
+}
+
+.participant-capacity-copy .participant-capacity-label{
+  grid-area:label!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  color:#123764!important;
+}
+
+.participant-capacity-copy small{
+  grid-area:meta!important;
+  font-size:8px!important;
+  color:#78879c!important;
+}
+
+.participant-capacity-progress-wrap{
+  display:grid!important;
+  gap:7px!important;
+  min-width:0!important;
+}
+
+.participant-capacity-progress-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  color:#51647e!important;
+  font-size:9px!important;
+  font-weight:800!important;
+}
+
+.participant-capacity-progress-head b{
+  color:#0d2f63!important;
+  font-size:10px!important;
+}
+
+.participant-capacity-track{
+  width:100%!important;
+  height:10px!important;
+  overflow:hidden!important;
+  border-radius:999px!important;
+  background:#e4eaf2!important;
+}
+
+.participant-capacity-track>span{
+  display:block!important;
+  height:100%!important;
+  border-radius:inherit!important;
+  background:linear-gradient(90deg,#178a57,#28a96e)!important;
+  transition:width .28s ease!important;
+}
+
+.participant-capacity-progress-wrap>small{
+  color:#7a8799!important;
+  font-size:8px!important;
+  line-height:1.5!important;
+}
+
+.participant-capacity-panel.is-full{
+  border-color:#c9d7ea!important;
+  background:linear-gradient(145deg,#f7faff 0%,#eef4fb 100%)!important;
+}
+
+.participant-capacity-panel.is-full .participant-capacity-copy strong{
+  color:#6d7f99!important;
+}
+
+.participant-capacity-panel.is-full .participant-capacity-track>span{
+  background:linear-gradient(90deg,#607a9d,#8296b2)!important;
+}
+
+@media(max-width:760px){
+  .participant-capacity-panel{
+    grid-template-columns:1fr!important;
+  }
+  .participant-capacity-copy{
+    border-inline-end:0!important;
+    border-bottom:1px solid #dce5f0!important;
+    padding-inline-end:0!important;
+    padding-bottom:12px!important;
+  }
 }
