@@ -8098,6 +8098,7 @@ function autoFinishExpiredEvents(){
   });
 
   if(changedApps)write(V32.apps,aa);
+  return changedApps;
 }
 function words15(v){return String(v||'').trim().split(/\s+/).filter(Boolean).slice(0,15).join(' ')}
 function openReportRequired(store,id){v32PendingReport={store,id};const row=findEvent(store,id);const m=document.getElementById('reportRequiredMessage');if(m)m.textContent=`لا يمكن إنهاء «${row?.name||'الحدث'}» قبل تسجيل وربط تقريره في التقارير والتحليلات.`;document.getElementById('reportRequiredModal')?.classList.remove('hidden')}
@@ -8181,14 +8182,23 @@ function renderParticipants(scope){const ids=participantScopeIds(scope);if(!ids)
 function updateApp(id,fn){const aa=apps(),a=aa.find(x=>x.id===id);if(!a)return;fn(a);write(V32.apps,aa);window.renderAll?.();setTimeout(refresh,40)}
 function acceptParticipant(id,scope){const a=apps().find(x=>x.id===id),event=eventList(scope).find(e=>String(e.id)===String(a?.requestId));if(!a||!event)return;const cap=Number(event.capacity)||0;if(cap>0&&acceptedFor(event.id)>=cap){window.showToast?.('لا توجد مقاعد شاغرة. ألغِ مشاركة أحد المقبولين قبل قبول مشارك جديد.');return}updateApp(id,a=>{a.status='مقبول';a.reason='';a.acceptedAt=new Date().toISOString()})}
 function exportParticipants(scope,type){const event=eventList(scope).find(e=>String(e.id)===String(v32Selected[scope]));if(!event){window.showToast?.('اختر حدثًا أولًا.');return}const rows=apps().filter(a=>String(a.requestId)===String(event.id));const data=rows.map((a,i)=>[i+1,a.student?.name||'',a.student?.studentId||'',a.student?.email||'',a.student?.phone||'',a.student?.gender||'',a.status||'تحت المراجعة']);if(type==='excel'){const csv='\ufeff'+[['#','الاسم','الرقم الجامعي','الإيميل','الجوال','الجنس','الحالة'],...data].map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`participants-${event.name}.csv`;a.click();URL.revokeObjectURL(url)}else{const w=window.open('','_blank');w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>${event.name}</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccd6e5;padding:8px;text-align:right}th{background:#eef4ff}</style></head><body><h2>${event.name}</h2><p>عدد المشاركين: ${rows.length} — المقبولون: ${acceptedFor(event.id)}</p><table><thead><tr><th>#</th><th>الاسم</th><th>الرقم الجامعي</th><th>الإيميل</th><th>الجوال</th><th>الجنس</th><th>الحالة</th></tr></thead><tbody>${data.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}}
-function refresh(){migrate();autoFinishExpiredEvents();['sports','club','volunteer','council'].forEach(renderIndex);populateReportEvents();window.renderAll?.();}
+function refresh(){
+  migrate();
+  autoFinishExpiredEvents();
+  ['sports','club','volunteer','council'].forEach(renderIndex);
+  populateReportEvents();
+}
 function bind(){document.addEventListener('click',e=>{const finish=e.target.closest('.finish-event-btn');if(finish){e.preventDefault();e.stopImmediatePropagation();requestFinish(finish.dataset.finishStore,finish.dataset.finishId);return}const go=e.target.closest('#goToEventReport');if(go){goReport();return}if(e.target.closest('[data-close-report-required]')){closeReportRequired();return}if(e.target.closest('[data-close-early-finish]')){closeEarly();return}const cf=e.target.closest('#confirmEarlyFinish');if(cf){confirmEarly();return}const normal=e.target.closest('#confirmFinishEvent');if(normal&&v32PendingFinish){e.preventDefault();e.stopImmediatePropagation();confirmNormalFinish();return}const sel=e.target.closest('[data-select-participant-event]');if(sel){v32Selected[sel.dataset.scope]=sel.dataset.selectParticipantEvent;renderIndex(sel.dataset.scope);return}const clearFilter=e.target.closest('[data-clear-event-filter]');if(clearFilter){const s=clearFilter.dataset.clearEventFilter;const q=document.getElementById(`${s}EventIndexSearch`),d=document.getElementById(`${s}EventIndexDate`);if(q)q.value='';if(d)d.value='';renderIndex(s);return}
 const ex=e.target.closest('[data-participant-export]');if(ex){exportParticipants(ex.dataset.scope,ex.dataset.participantExport);return}const ac=e.target.closest('.v32-accept-participant');if(ac){acceptParticipant(ac.dataset.id,ac.dataset.scope);return}const ro=e.target.closest('.v32-reject-participant');if(ro){ro.closest('.participant-pending-actions')?.querySelector('.v32-reject-editor')?.classList.remove('hidden');return}const rc=e.target.closest('.v32-confirm-reject');if(rc){const ed=rc.closest('.v32-reject-editor'),reason=ed?.querySelector('input')?.value.trim();if(!reason){window.showToast?.('سبب الرفض إلزامي.');return}updateApp(rc.dataset.id,a=>{a.status='مرفوض';a.reason=reason});return}const ca=e.target.closest('.v32-cancel-accept');if(ca){ca.closest('.participant-final')?.querySelector('.v32-cancel-accept-editor')?.classList.remove('hidden');return}const cc=e.target.closest('.v32-confirm-cancel-accept');if(cc){const ed=cc.closest('.v32-cancel-accept-editor'),input=ed?.querySelector('input'),reason=input?.value.trim()||'',wc=reason.split(/\s+/).filter(Boolean).length;if(!reason){window.showToast?.('سبب إلغاء المشاركة إلزامي.');return}if(wc>15){window.showToast?.('سبب إلغاء المشاركة لا يتجاوز 15 كلمة.');return}updateApp(cc.dataset.id,a=>{a.status='تحت المراجعة';a.acceptanceCancelledReason=reason;a.acceptanceCancelledAt=new Date().toISOString()});return}const ur=e.target.closest('.v32-undo-reject');if(ur){updateApp(ur.dataset.id,a=>{a.status='تحت المراجعة';a.reason='';a.rejectionCancelledAt=new Date().toISOString()});return}},true);document.getElementById('activitySourceEvent')?.addEventListener('change',e=>autofillReport(e.target));document.getElementById('openAddActivity')?.addEventListener('click',()=>setTimeout(()=>populateReportEvents(v32PendingReport),80));document.getElementById('saveNewActivity')?.addEventListener('click',()=>setTimeout(refresh,260));document.getElementById('earlyFinishReason')?.addEventListener('input',e=>{const words=e.target.value.trim().split(/\s+/).filter(Boolean);if(words.length>15)e.target.value=words.slice(0,15).join(' ');document.getElementById('earlyFinishWordCount').textContent=e.target.value.trim()?e.target.value.trim().split(/\s+/).length:0});['sportsApplicantSearch','sportsApplicantStatus','clubApplicantSearch','clubApplicantStatus','volunteerApplicantSearch','volunteerApplicantStatus','councilApplicantSearch','councilApplicantStatus'].forEach(id=>document.getElementById(id)?.addEventListener(id.includes('Search')?'input':'change',()=>{const s=id.startsWith('sports')?'sports':id.startsWith('club')?'club':id.startsWith('volunteer')?'volunteer':'council';renderParticipants(s)}));['sports','club','volunteer','council'].forEach(s=>{
   document.getElementById(`${s}EventIndexSearch`)?.addEventListener('input',()=>renderIndex(s));
   document.getElementById(`${s}EventIndexDate`)?.addEventListener('change',()=>renderIndex(s));
 });
 document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!canCreateMore())blockCreateIfNeeded(e)},true)}
-window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();autoFinishExpiredEvents();setTimeout(refresh,250);setInterval(()=>{autoFinishExpiredEvents();populateReportEvents();['sports','club','volunteer','council'].forEach(renderIndex);window.renderAll?.();},60000);document.documentElement.dataset.sahBuild='32.5';console.info('SAH build 32.5 timing search swipe budget fix loaded')});
+window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();autoFinishExpiredEvents();setTimeout(refresh,250);setInterval(()=>{
+  autoFinishExpiredEvents();
+  populateReportEvents();
+  ['sports','club','volunteer','council'].forEach(renderIndex);
+},60000);document.documentElement.dataset.sahBuild='32.5';console.info('SAH build 32.5 timing search swipe budget fix loaded')});
 })();
 
 
@@ -8499,14 +8509,8 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     applyPermission();
     refreshBudgetUI();
 
-    // A small interval keeps permission synchronized with legacy role rendering,
-    // without observing/changing the same attributes recursively.
-    setInterval(()=>{
-      applyPermission();
-    },1500);
-
-    document.documentElement.dataset.sahBuild='32.7';
-    console.info('SAH build 32.7 standalone Dean budget modal loaded');
+    document.documentElement.dataset.sahBuild='32.8';
+    console.info('SAH build 32.8 stability hotfix + Dean budget modal loaded');
   }
 
   window.SAH_DEAN_BUDGET={
@@ -8523,3 +8527,10 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     initialize();
   }
 })();
+
+
+/* SAH V32.8 — render-loop safety guard */
+window.addEventListener('DOMContentLoaded',()=>{
+  document.documentElement.dataset.sahBuild='32.8';
+  console.info('SAH V32.8 stability hotfix active: v32Refresh no longer calls renderAll.');
+});
