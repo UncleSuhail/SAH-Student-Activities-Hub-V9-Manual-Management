@@ -14165,3 +14165,143 @@ html[lang="ar"] .student-quick-link-card{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* ==========================================================
+   SAH V32.5 — swipeable event index, precise search,
+   lifecycle timing, budget editing/export
+   ========================================================== */
+
+.participant-event-filterbar{
+  display:grid!important;
+  grid-template-columns:minmax(220px,1fr) minmax(160px,220px) auto!important;
+  gap:10px!important;
+  align-items:end!important;
+  margin:12px 0!important;
+  padding:10px!important;
+  border:1px solid #dfe7f1!important;
+  border-radius:14px!important;
+  background:#f8fbff!important;
+}
+
+.participant-event-search{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-width:0!important;
+  height:40px!important;
+  padding:0 12px!important;
+  border:1px solid #d6e0ed!important;
+  border-radius:12px!important;
+  background:#fff!important;
+}
+.participant-event-search input{
+  width:100%!important;
+  min-width:0!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  color:#102f58!important;
+}
+
+.participant-event-date-filter{
+  display:grid!important;
+  gap:4px!important;
+}
+.participant-event-date-filter>span{
+  font-size:8px!important;
+  font-weight:850!important;
+  color:#6e7d92!important;
+}
+.participant-event-date-filter input{
+  height:40px!important;
+  border:1px solid #d6e0ed!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  padding:0 10px!important;
+}
+
+.participant-event-clear-filter{
+  height:40px!important;
+  padding:0 14px!important;
+  border:1px solid #cbd9eb!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#0b55d9!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+}
+
+/* Cards never stack indefinitely: they form a horizontal swipe/drag rail. */
+.participant-event-index{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:14px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  width:100%!important;
+  max-width:100%!important;
+  padding:4px 3px 14px!important;
+  scroll-snap-type:x proximity!important;
+  overscroll-behavior-inline:contain!important;
+  scrollbar-width:thin!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+
+.participant-event-card{
+  flex:0 0 clamp(300px,31vw,390px)!important;
+  width:auto!important;
+  max-width:390px!important;
+  min-width:300px!important;
+  scroll-snap-align:start!important;
+}
+
+.participant-event-index::-webkit-scrollbar{height:8px!important;}
+.participant-event-index::-webkit-scrollbar-track{background:#eef3f8!important;border-radius:999px!important;}
+.participant-event-index::-webkit-scrollbar-thumb{background:#a9bdd8!important;border-radius:999px!important;}
+
+.event-end-time-field input,
+.event-start-time-field input{
+  font-variant-numeric:tabular-nums!important;
+}
+
+.student-event-details{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+
+.budget-detail-actions{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
+}
+.budget-export-btn{
+  min-width:72px!important;
+  font-weight:900!important;
+}
+
+#openAnnualBudgetEditor{
+  pointer-events:auto!important;
+  position:absolute!important;
+  z-index:30!important;
+  cursor:pointer!important;
+}
+#annualBudgetModal:not(.hidden){
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+@media(max-width:760px){
+  .participant-event-filterbar{
+    grid-template-columns:1fr!important;
+  }
+  .participant-event-card{
+    flex-basis:min(86vw,350px)!important;
+    min-width:min(86vw,350px)!important;
+  }
+  .student-event-details{
+    grid-template-columns:1fr!important;
+  }
+}
