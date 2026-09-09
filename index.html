@@ -6,7 +6,7 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="#082b63" name="theme-color"/>
 <title>Student Activities Platform | UBT</title>
-<link href="css/style.css?v=32.3" rel="stylesheet"/>
+<link href="css/style.css?v=32.4" rel="stylesheet"/>
 <style id="sah-mobile-critical-v201">
 @media (max-width:1100px){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
@@ -70,7 +70,7 @@
 }
 </style>
 </head>
-<body class="login-mode" data-sah-version="32.3">
+<body class="login-mode" data-sah-version="32.4">
 <section class="login-page" id="login">
 <div class="login-bg"></div>
 <div class="login-card">
@@ -586,10 +586,16 @@
 </div>
 <div class="card table-card dashboard-detail-panel hidden" id="generalBudgetDetails">
 <div class="dashboard-detail-head">
-<div><span>تفاصيل الميزانيات</span><h3 id="generalBudgetDetailsTitle">الميزانيات</h3></div>
+<div><span>تفاصيل الميزانيات</span><h3 id="generalBudgetDetailsTitle">سجل الميزانيات</h3></div>
 <button class="btn outline" id="closeGeneralBudgetDetails" type="button">إغلاق</button>
 </div>
-<div class="table-wrap">
+<div class="budget-detail-summary">
+  <div><span>الميزانية السنوية</span><strong id="budgetDetailsAnnual">0 ر.س</strong></div>
+  <div class="spent"><span>المصروف المعتمد</span><strong id="budgetDetailsSpent">0 ر.س</strong></div>
+  <div class="requested"><span>المطلوب قيد المراجعة</span><strong id="budgetDetailsRequested">0 ر.س</strong></div>
+  <div class="remaining"><span>الرصيد المتبقي</span><strong id="budgetDetailsRemaining">0 ر.س</strong></div>
+</div>
+<div class="table-wrap budget-detail-table-wrap">
 <table>
 <thead><tr><th>الحدث</th><th>نوع الطلب</th><th>مقدم الطلب</th><th>التاريخ</th><th>الفئة / السعة</th><th>حالة الطلب</th><th>حالة الحدث</th><th>الميزانية المطلوبة</th></tr></thead>
 <tbody id="generalBudgetDetailsRows"></tbody>
@@ -1378,8 +1384,8 @@
 <div class="card stat"><div class="label">الأنشطة الموافق عليها</div><div class="value" id="councilActivitiesApproved">0</div><div class="sub">تم اعتمادها من العمادة</div></div>
 <div class="card stat burg"><div class="label">قيد المراجعة</div><div class="value" id="councilActivitiesPending">0</div><div class="sub">بانتظار قرار العمادة</div></div>
 </div>
-<div class="grid cols-2 council-main-grid">
-<div class="card council-members-card">
+<div class="council-stack-layout council-main-grid">
+<div class="card council-members-card council-section-card" data-council-section="01">
 <div class="section-title compact-title">
 <div><h3>أعضاء المجلس الطلابي</h3><p>ربط أعضاء المجلس بالبريد الجامعي دون إنشاء حسابات جديدة.</p></div>
 </div>
@@ -1410,7 +1416,7 @@
 </table>
 </div>
 </div>
-<div class="card council-activity-card">
+<div class="card council-activity-card council-section-card" data-council-section="02">
 <div class="section-title compact-title">
 <div><h3>تقديم نشاط للمجلس الطلابي</h3><p>يرسل الطلب إلى صلاحيات عمادة شؤون الطلاب للموافقة أو الرفض.</p></div>
 </div>
@@ -1444,7 +1450,7 @@
 </div>
 </div>
 <div class="section-title council-participants-title"><div><h3>طلبات المشاركين</h3><p>طلبات الطلبة المتقدمين لأنشطة المجلس الطلابي. يمكن للرئيس ونائب الرئيس قبول أو رفض الطلب مع ذكر سبب الرفض.</p></div></div>
-<div class="card table-card council-participant-requests-card">
+<div class="card table-card council-participant-requests-card council-section-card" data-council-section="03">
 <div class="participant-index-shell" data-participant-scope="council"><div class="participant-index-heading"><div><span>فهرس الفعاليات والمشاركين</span><h4>اختر الحدث لعرض المشاركين المرتبطين به</h4></div><div class="participant-export-actions"><button data-participant-export="excel" data-scope="council" type="button">Excel</button><button data-participant-export="pdf" data-scope="council" type="button">PDF</button></div></div><div class="participant-event-index" id="councilParticipantEventIndex"></div></div><div class="records-toolbar">
 <div class="records-search"><span aria-hidden="true" data-icon="search"></span><input autocomplete="off" id="councilApplicantSearch" placeholder="ابحث باسم الحدث أو المشارك أو الرقم الجامعي أو الإيميل" type="search"/></div>
 <select class="records-filter" id="councilApplicantStatus"><option value="all">كل الحالات</option><option value="مقبول">المقبولة</option><option value="مرفوض">المرفوضة</option><option value="تحت المراجعة">قيد المراجعة</option></select>
@@ -1452,8 +1458,8 @@
 <div class="table-wrap"><table><thead><tr><th>الحدث</th><th>الاسم</th><th>الرقم الجامعي</th><th>الإيميل</th><th>الجوال</th><th>الحالة</th><th>القرار</th></tr></thead><tbody id="councilApplicantRows"></tbody></table></div>
 </div>
 </div>
-<div class="grid cols-2 council-secondary-grid">
-<div class="card council-meetings-card">
+<div class="council-stack-layout council-secondary-grid">
+<div class="card council-meetings-card council-section-card" data-council-section="04">
 <div class="section-title compact-title">
 <div><h3>جدول اجتماعات المجلس</h3><p>الرئيس يحدد المهمة والتاريخ والوقت والعضو المسؤول.</p></div>
 <button class="btn outline" id="downloadCouncilMeetingsPdf" type="button">تنزيل PDF</button>
@@ -1469,7 +1475,7 @@
 <table><thead><tr><th>المهمة</th><th>التاريخ</th><th>الوقت</th><th>العضو المسؤول</th><th>الإجراء</th></tr></thead><tbody id="councilMeetingRows"></tbody></table>
 </div>
 </div>
-<div class="card council-suggestions-card">
+<div class="card council-suggestions-card council-section-card" data-council-section="05">
 <div class="section-title compact-title">
 <div><h3>مقترحات وملاحظات الطلبة</h3><p>الطلبات الواردة من بوابة الطالب.</p></div>
 </div>
@@ -1478,7 +1484,7 @@
 </div>
 </div>
 </div>
-<div class="card council-permissions-card">
+<div class="card council-permissions-card council-section-card" data-council-section="06">
 <h4>صلاحيات أعضاء المجلس</h4>
 <div class="council-permission-grid">
 <div><strong>الرئيس</strong><span>صلاحية كاملة على أعضاء المجلس والأنشطة والاجتماعات.</span></div>
@@ -2084,7 +2090,7 @@
 </div>
 <script src="js/data.js?v=22.0"></script>
 <script src="js/admin.js?v=22.0"></script>
-<script src="js/app.js?v=32.3"></script>
+<script src="js/app.js?v=32.4"></script>
 <div aria-modal="true" class="modal hidden" id="finishEventModal" role="dialog">
 <div class="modal-backdrop" data-close-finish-event=""></div>
 <div class="modal-card university-confirm-modal finish-event-modern-modal"><div class="finish-event-confirm-shell">
