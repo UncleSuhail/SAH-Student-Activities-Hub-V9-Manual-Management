@@ -8181,3 +8181,214 @@ const ex=e.target.closest('[data-participant-export]');if(ex){exportParticipants
 document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!canCreateMore())blockCreateIfNeeded(e)},true)}
 window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();autoFinishExpiredEvents();setTimeout(refresh,250);setInterval(()=>{autoFinishExpiredEvents();populateReportEvents();['sports','club','volunteer','council'].forEach(renderIndex);window.renderAll?.();},60000);document.documentElement.dataset.sahBuild='32.5';console.info('SAH build 32.5 timing search swipe budget fix loaded')});
 })();
+
+
+/* ==========================================================
+   SAH V32.6 — definitive Dean annual-budget editor controller
+   ========================================================== */
+(()=>{
+  'use strict';
+
+  const KEY='sah-v30-annual-budget';
+
+  function activeRole(){
+    return document.getElementById('activeRole')?.value ||
+           document.getElementById('mobileActiveRole')?.value ||
+           document.body?.dataset?.activeRole ||
+           localStorage.getItem('sah-v15-role') ||
+           localStorage.getItem('sah-v22-role') ||
+           'system';
+  }
+
+  function isDean(){
+    return activeRole()==='dean';
+  }
+
+  function annual(){
+    const n=Number(localStorage.getItem(KEY));
+    return Number.isFinite(n)&&n>=0?n:0;
+  }
+
+  function money(value){
+    return `${Number(value||0).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;
+  }
+
+  function spent(){
+    try{
+      if(typeof allBudgetRows==='function'){
+        return allBudgetRows()
+          .filter(row=>{
+            const state=row.__budgetStatus ||
+              (['مقبول','معتمد','معتمد نهائيًا','تمت الموافقة'].includes(String(row.status||''))?'approved':'');
+            return state==='approved';
+          })
+          .reduce((sum,row)=>sum+(Number(row.budget)||0),0);
+      }
+    }catch(error){
+      console.error('Budget spent calculation failed',error);
+    }
+    return 0;
+  }
+
+  function syncEditorPermission(){
+    const button=document.getElementById('openAnnualBudgetEditor');
+    if(!button)return;
+
+    const allowed=isDean();
+    button.hidden=!allowed;
+    button.disabled=!allowed;
+    button.setAttribute('aria-hidden',allowed?'false':'true');
+    button.style.display=allowed?'inline-flex':'none';
+  }
+
+  function syncModalNumbers(){
+    const total=annual();
+    const used=spent();
+    const remaining=total-used;
+
+    const current=document.getElementById('annualBudgetCurrentValue');
+    const summary=document.getElementById('annualBudgetSpentSummary');
+    const input=document.getElementById('annualBudgetInput');
+
+    if(current)current.textContent=money(total);
+    if(summary){
+      summary.textContent=remaining<0
+        ? `المصروف المعتمد: ${money(used)} — العجز: ${money(Math.abs(remaining))}`
+        : `المصروف المعتمد: ${money(used)} — المتبقي: ${money(remaining)}`;
+    }
+    if(input&&!input.matches(':focus'))input.value=total||'';
+  }
+
+  function openEditor(){
+    if(!isDean()){
+      window.showToast?.('تعديل الميزانية السنوية متاح لعميد شؤون الطلاب فقط.');
+      return;
+    }
+
+    syncModalNumbers();
+
+    const modal=document.getElementById('annualBudgetModal');
+    if(!modal)return;
+
+    modal.hidden=false;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden','false');
+    modal.style.display='flex';
+    modal.style.visibility='visible';
+    modal.style.opacity='1';
+    modal.style.pointerEvents='auto';
+
+    requestAnimationFrame(()=>{
+      document.getElementById('annualBudgetInput')?.focus();
+      document.getElementById('annualBudgetInput')?.select();
+    });
+  }
+
+  function closeEditor(){
+    const modal=document.getElementById('annualBudgetModal');
+    if(!modal)return;
+
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden','true');
+    modal.style.removeProperty('display');
+    modal.style.removeProperty('visibility');
+    modal.style.removeProperty('opacity');
+    modal.style.removeProperty('pointer-events');
+  }
+
+  function saveEditor(){
+    if(!isDean()){
+      window.showToast?.('تعديل الميزانية السنوية متاح لعميد شؤون الطلاب فقط.');
+      return;
+    }
+
+    const input=document.getElementById('annualBudgetInput');
+    const value=Number(input?.value);
+
+    if(!Number.isFinite(value)||value<0){
+      window.showToast?.('أدخل ميزانية سنوية صحيحة.');
+      input?.focus();
+      return;
+    }
+
+    localStorage.setItem(KEY,String(value));
+
+    try{ renderBudgetDashboard?.(); }catch(error){ console.error(error); }
+    try{ v309RenderAnnualBudget?.(); }catch(error){ console.error(error); }
+    try{ v309PatchBudgetButtons?.(); }catch(error){ console.error(error); }
+
+    syncModalNumbers();
+    closeEditor();
+    window.showToast?.('تم حفظ الميزانية السنوية وتحديث المصروف والمتبقي بنجاح.');
+  }
+
+  function replaceAndBind(id,handler){
+    const old=document.getElementById(id);
+    if(!old)return null;
+
+    const fresh=old.cloneNode(true);
+    old.replaceWith(fresh);
+
+    fresh.addEventListener('click',event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      handler();
+    },true);
+
+    return fresh;
+  }
+
+  function bindController(){
+    const edit=replaceAndBind('openAnnualBudgetEditor',openEditor);
+    if(edit)edit.dataset.deanBudgetControl='1';
+
+    replaceAndBind('saveAnnualBudget',saveEditor);
+
+    document.querySelectorAll('[data-close-annual-budget]').forEach(old=>{
+      const fresh=old.cloneNode(true);
+      old.replaceWith(fresh);
+      fresh.addEventListener('click',event=>{
+        event.preventDefault();
+        event.stopPropagation();
+        closeEditor();
+      },true);
+    });
+
+    document.getElementById('annualBudgetModal')?.addEventListener('click',event=>{
+      if(event.target?.matches('.modal-backdrop'))closeEditor();
+    });
+
+    ['activeRole','mobileActiveRole'].forEach(id=>{
+      document.getElementById(id)?.addEventListener('change',()=>{
+        setTimeout(()=>{
+          syncEditorPermission();
+          syncModalNumbers();
+        },0);
+      });
+    });
+
+    syncEditorPermission();
+    syncModalNumbers();
+
+    // Keep the role-restricted button correct after platform re-renders.
+    const card=document.getElementById('generalAnnualBudgetCard');
+    if(card){
+      new MutationObserver(syncEditorPermission)
+        .observe(card,{childList:true,subtree:true,attributes:true});
+    }
+  }
+
+  window.SAH_DEAN_BUDGET={
+    open:openEditor,
+    close:closeEditor,
+    save:saveEditor,
+    sync:syncEditorPermission
+  };
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    setTimeout(bindController,350);
+    document.documentElement.dataset.sahBuild='32.6';
+    console.info('SAH build 32.6 Dean budget editor controller loaded');
+  });
+})();

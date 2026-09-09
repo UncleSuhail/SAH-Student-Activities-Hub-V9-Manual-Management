@@ -14305,3 +14305,48 @@ html[lang="ar"] .student-quick-link-card{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* ==========================================================
+   SAH V32.6 — Dean budget control click reliability
+   ========================================================== */
+#generalAnnualBudgetCard{
+  position:relative!important;
+  overflow:hidden!important;
+}
+
+#generalAnnualBudgetCard::before,
+#generalAnnualBudgetCard::after{
+  pointer-events:none!important;
+}
+
+#generalAnnualBudgetCard > span,
+#generalAnnualBudgetCard > strong,
+#generalAnnualBudgetCard > small{
+  pointer-events:none!important;
+}
+
+#openAnnualBudgetEditor{
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  user-select:none!important;
+  z-index:999!important;
+}
+
+body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
+  display:none!important;
+}
+
+#annualBudgetModal{
+  z-index:10050!important;
+}
+
+#annualBudgetModal .modal-backdrop{
+  z-index:0!important;
+}
+
+#annualBudgetModal .annual-budget-modal-card{
+  position:relative!important;
+  z-index:2!important;
+  pointer-events:auto!important;
+}
