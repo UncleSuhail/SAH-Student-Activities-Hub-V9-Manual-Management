@@ -14370,11 +14370,6 @@ body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
   touch-action:manipulation!important;
 }
 
-#openAnnualBudgetEditor[hidden],
-#openAnnualBudgetEditor[disabled]{
-  display:none!important;
-}
-
 #annualBudgetModal{
   position:fixed!important;
   inset:0!important;
@@ -14405,4 +14400,32 @@ body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
   max-height:calc(100vh - 40px)!important;
   overflow:auto!important;
   pointer-events:auto!important;
+}
+
+
+/* ==========================================================
+   SAH V32.9 — keep budget edit control visible and permission-locked
+   ========================================================== */
+#openAnnualBudgetEditor{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  min-width:92px!important;
+  min-height:29px!important;
+}
+
+#openAnnualBudgetEditor .annual-budget-edit-label{
+  pointer-events:none!important;
+}
+
+#openAnnualBudgetEditor[data-dean-allowed="1"]{
+  cursor:pointer!important;
+}
+
+#openAnnualBudgetEditor[data-dean-allowed="0"]{
+  cursor:not-allowed!important;
+  opacity:.72!important;
 }

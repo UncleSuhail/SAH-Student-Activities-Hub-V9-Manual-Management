@@ -7887,7 +7887,7 @@ function v309RenderAnnualBudget(){
   if(input&&!input.matches(':focus'))input.value=total||'';
 
   const edit=document.getElementById('openAnnualBudgetEditor');
-  if(edit)edit.dataset.budgetPermissionManaged='v327';
+  if(edit){edit.hidden=false;edit.disabled=false;edit.style.display='inline-flex';}
 }
 
 function v309OpenAnnualBudget(){
@@ -8373,11 +8373,17 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     if(!button)return;
 
     const allowed=deanByIdentity();
-    button.hidden=!allowed;
-    button.disabled=!allowed;
-    button.style.display=allowed?'inline-flex':'none';
-    button.setAttribute('aria-disabled',allowed?'false':'true');
-    button.title=allowed?'تحديد أو تعديل الميزانية السنوية':'متاح لعميد شؤون الطلاب فقط';
+
+    // V32.9: keep the control visible at all times to prevent legacy renderers
+    // from making it disappear. Permission is enforced on click/save.
+    button.hidden=false;
+    button.disabled=false;
+    button.style.display='inline-flex';
+    button.setAttribute('aria-disabled','false');
+    button.dataset.deanAllowed=allowed?'1':'0';
+    button.title=allowed
+      ? 'تحديد أو تعديل الميزانية السنوية'
+      : 'التعديل متاح لعميد شؤون الطلاب فقط';
   }
 
   function openModal(){
@@ -8509,8 +8515,8 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     applyPermission();
     refreshBudgetUI();
 
-    document.documentElement.dataset.sahBuild='32.8';
-    console.info('SAH build 32.8 stability hotfix + Dean budget modal loaded');
+    document.documentElement.dataset.sahBuild='32.9';
+    console.info('SAH build 32.9 budget button visibility + Dean lock loaded');
   }
 
   window.SAH_DEAN_BUDGET={
@@ -8531,6 +8537,6 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
 
 /* SAH V32.8 — render-loop safety guard */
 window.addEventListener('DOMContentLoaded',()=>{
-  document.documentElement.dataset.sahBuild='32.8';
-  console.info('SAH V32.8 stability hotfix active: v32Refresh no longer calls renderAll.');
+  document.documentElement.dataset.sahBuild='32.9';
+  console.info('SAH V32.9 active: stable render loop fix + visible budget edit control.');
 });
