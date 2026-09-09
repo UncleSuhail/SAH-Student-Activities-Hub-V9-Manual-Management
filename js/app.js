@@ -363,6 +363,7 @@ Object.assign(SAH_TEXT_EN,{"تم اختيارك للمشاركة":"You Were Sele
 Object.assign(SAH_TEXT_EN,{"الفعاليات المتاحة":"Available Events","طلبات المشاركين":"Participant Applications","الرجوع":"Back","العودة إلى الصفحة الرئيسية المخصصة لحسابك":"Return to your account home page","الميزانية السنوية المتبقية":"Remaining Annual Budget","إضافة / تعديل الميزانية":"Add / Edit Budget","تحديد الميزانية السنوية":"Set Annual Budget","الميزانية المطلوبة":"Requested Budget","حالة الحدث":"Event Status"});
 Object.assign(SAH_TEXT_EN,{"روابط سريعة":"Quick Links","روابط رسمية مهمة لطلبة الجامعة.":"Important official links for university students.","التقويم الأكاديمي":"Academic Calendar","الموقع الرئيسي":"Main Website","حالة جميع الطلبات":"All Request Statuses","ملخص القرارات":"Decision Summary","اضغط على أي حالة لعرض الطلبات المرتبطة بها مباشرة في الجدول.":"Click any status to view the related requests directly in the table.","إجمالي الطلبات":"Total Requests","الموافقات":"Approved","الرفض":"Rejected","قيد المراجعة":"Under Review","جميع الطلبات":"All Requests","طلبات تمت الموافقة عليها":"Approved requests","طلبات تم رفضها":"Rejected requests","بانتظار اتخاذ القرار":"Awaiting decision"});
 Object.assign(SAH_TEXT_EN,{"جدول الاختبارات النهائية":"Final Exams Schedule"});
+Object.assign(SAH_TEXT_EN,{"التقرير":"Report","مسجل":"Registered","غير مسجل":"Not Registered","سبب الإنهاء المبكر":"Early End Reason","عدد المستفيدين المتوقع":"Expected Beneficiaries","وقت بدء الحدث":"Event Start Time","الحدث المرتبط بالتقرير":"Linked Event","مقاعد شاغرة":"Vacant Seats","إلغاء المشاركة":"Cancel Participation","إلغاء الرفض":"Undo Rejection","يجب تسجيل تقرير الحدث أولًا":"Event Report Required","الانتقال إلى إضافة نشاط":"Go to Add Activity"});
 const SAH_TEXT_AR = Object.fromEntries(Object.entries(SAH_TEXT_EN).map(([ar,en])=>[en,ar]));
 const SAH_PHRASES = Object.entries(SAH_TEXT_EN).sort((a,b)=>b[0].length-a[0].length);
 function translateLoose(text,lang){
@@ -1901,6 +1902,8 @@ window.addEventListener('DOMContentLoaded',initPreferences);
 
     const row = {
       ...existing,
+      sourceEventId: document.getElementById('activitySourceEvent')?.value || existing.sourceEventId || '',
+      sourceEventStore: document.getElementById('activitySourceEvent')?.selectedOptions?.[0]?.dataset.store || existing.sourceEventStore || '',
       activity: document.getElementById('activityName')?.value.trim() || '',
       date: document.getElementById('activityDate')?.value || '',
       days: Number(document.getElementById('activityDays')?.value || 0),
@@ -1913,7 +1916,7 @@ window.addEventListener('DOMContentLoaded',initPreferences);
       subField: document.getElementById('activitySubField')?.value || '',
       participationType: document.getElementById('activityParticipationType')?.value || 'guest',
       universities: Number(document.getElementById('activityUniversities')?.value || 0),
-      gameType: document.getElementById('activityGameType')?.value.trim() || '',
+      gameType: (document.getElementById('activityGameTypeOtherWrap')?.classList.contains('hidden') ? document.getElementById('activityGameType')?.value.trim() : document.getElementById('activityGameTypeOther')?.value.trim()) || '',
       budget: Number(document.getElementById('activityBudget')?.value || 0),
       documentationUrl: document.getElementById('activityDocumentationUrl')
         ?.value.trim() || '',
@@ -3832,8 +3835,8 @@ function tables(){
  put(
    'sportsRequestRows',
    filteredStoredRows(K.sports,'sportsRequestSearch','sportsRequestStatus').map(row=>({...row,__store:K.sports})),
-   row=>`<tr><td>${row.name}</td><td>${row.date}</td><td>${row.game}</td><td>${row.capacity}</td><td>${money(row.budget)}</td><td>${badge(row.status)}</td><td>${row.reason||'—'}</td><td>${finishAction(row)}</td></tr>`,
-   8
+   row=>`<tr><td>${row.name}</td><td>${row.date}</td><td>${row.game}</td><td>${row.capacity}</td><td>${money(row.budget)}</td><td>${badge(row.status)}</td><td>${row.reason||'—'}</td><td>${window.v32ReportBadge?.(row,row.__store)||'—'}</td><td>${finishAction(row)}</td></tr>`,
+   9
  );
 
  put(
@@ -3846,24 +3849,24 @@ function tables(){
  put(
    'clubEventRequestRows',
    filteredStoredRows(K.clubEvents,'clubEventSearch','clubEventStatus').map(row=>({...row,__store:K.clubEvents})),
-   row=>`<tr><td>${row.name}</td><td>${row.club}</td><td>${row.date}</td><td>${row.location}</td><td>${row.capacity}</td><td>${money(row.budget)}</td><td>${badge(row.status)}</td><td>${row.reason||'—'}</td><td>${finishAction(row)}</td></tr>`,
-   9
+   row=>`<tr><td>${row.name}</td><td>${row.club}</td><td>${row.date}</td><td>${row.location}</td><td>${row.capacity}</td><td>${money(row.budget)}</td><td>${badge(row.status)}</td><td>${row.reason||'—'}</td><td>${window.v32ReportBadge?.(row,row.__store)||'—'}</td><td>${finishAction(row)}</td></tr>`,
+   10
  );
 
  put(
    'volunteerRequestRows',
    filteredStoredRows(K.vol,'volunteerTableSearch','volunteerTableStatus').map(row=>({...row,__store:K.vol})),
-   row=>`<tr><td>${row.name}</td><td>${row.date}</td><td>${row.capacity}</td><td>${row.owner}</td><td>${money(row.budget)}</td><td>${badge(row.status)}</td><td>${row.reason||'—'}</td><td>${finishAction(row)}</td></tr>`,
-   8
+   row=>`<tr><td>${row.name}</td><td>${row.date}</td><td>${row.capacity}</td><td>${row.owner}</td><td>${money(row.budget)}</td><td>${badge(row.status)}</td><td>${row.reason||'—'}</td><td>${window.v32ReportBadge?.(row,row.__store)||'—'}</td><td>${finishAction(row)}</td></tr>`,
+   9
  );
 }
 function student(){
  const a=R(K.apps),used=new Set(a.map(x=>x.requestId)),ops=allReq().filter(r=>r.status==='مقبول'&&r.kind!=='تسجيل نادي جديد'&&!used.has(r.id));
  const c=document.getElementById('studentApprovedOpportunityCards');
  if(c)c.innerHTML=ops.length?ops.map(r=>{
-   const appliedCount=a.filter(item=>item.requestId===r.id).length;
-   const capacity=Math.max(0,Number(r.capacity)||Number(r.participants)||0);
-   const remaining=Math.max(0,capacity-appliedCount);
+   const acceptedCount=a.filter(item=>item.requestId===r.id&&item.status==='مقبول').length;
+   const capacity=Math.max(0,Number(r.capacity)||0);
+   const remaining=Math.max(0,capacity-acceptedCount);
    const location=r.location||r.game||'غير محدد';
    const eventType=r.kind||r.type||'فعالية';
    const isFull=capacity>0&&remaining<=0;
@@ -4079,7 +4082,7 @@ function applicants(){
            ${actionMarkup(application)}
          </td>
        </tr>`).join('')
-     : '<tr><td colspan="8">لا توجد طلبات.</td></tr>';
+     : '<tr><td colspan="10">لا توجد طلبات.</td></tr>';
  };
 
  draw('sportsApplicantRows','بطولة/حدث رياضي','sportsApplicantSearch','sportsApplicantStatus');
@@ -4240,9 +4243,11 @@ function approvals(){
      <td>${r.gender||r.capacity||'—'}</td>
      <td><strong class="approval-budget-value">${Number(r.budget)>0?money(r.budget):'—'}</strong></td>
      <td>${badge(r.status)}</td>
+     <td>${window.v32ReportBadge?.(r,r.store)||'—'}</td>
+     <td class="early-end-reason-cell">${r.earlyEndReason?`<span>${r.earlyEndReason}</span>`:'—'}</td>
      <td class="approval-action-cell">${actionHtml}</td>
    </tr>`;
- }).join(''):'<tr><td colspan="8">لا توجد طلبات.</td></tr>';
+ }).join(''):'<tr><td colspan="10">لا توجد طلبات.</td></tr>';
 
  document.querySelectorAll('.approve-req').forEach(button=>button.onclick=()=>{
    const rows=R(button.dataset.store);
@@ -5640,7 +5645,8 @@ function initGrantWorkflow(){
  renderGrantWorkflow();
 }
 
-function renderAll(){tables();student();applicants();approvals();bindApprovalStatusOverview?.();populateClubEventSelect();renderRegisteredClubs();renderGeneralIndicator();renderGrantWorkflow();renderSportsManagementDashboard();renderV30Extensions();setTimeout(()=>window.v309Refresh?.(),20);const b=document.querySelector('[data-event-category].active');if(b)renderCategory(b.dataset.eventCategory)}
+function renderAll(){tables();student();applicants();approvals();bindApprovalStatusOverview?.();populateClubEventSelect();renderRegisteredClubs();renderGeneralIndicator();renderGrantWorkflow();renderSportsManagementDashboard();renderV30Extensions();setTimeout(()=>{window.v309Refresh?.();window.v32Refresh?.();},20);const b=document.querySelector('[data-event-category].active');if(b)renderCategory(b.dataset.eventCategory)}
+window.renderAll=renderAll;
 function bind(id,fn){const o=document.getElementById(id);if(!o)return;const n=o.cloneNode(true);o.replaceWith(n);n.onclick=fn}
 window.addEventListener('DOMContentLoaded',()=>{
  document.getElementById('exportApprovalsExcel')
@@ -5709,7 +5715,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    if(!validateRequiredContainer(form))return;
    const d=document.getElementById('sportsReqDate').value;if(!later3(d))return alert('يجب أن يكون الحدث بعد 3 أيام على الأقل.');push(K.sports,{id:id('sp'),name:document.getElementById('sportsReqName').value,description:normalizeEventDescription(document.getElementById('sportsReqDescription')?.value),date:d,game:document.getElementById('sportsReqGame').value,
         location:document.getElementById('sportsReqLocation')?.value.trim()||'غير محدد',
-        participants:+document.getElementById('sportsReqParticipants').value,teams:+document.getElementById('sportsReqTeams').value,universities:+document.getElementById('sportsReqUniversities').value,capacity:+document.getElementById('sportsReqCapacity').value,budget:+document.getElementById('sportsReqBudget').value,gender:document.getElementById('sportsReqGender').value,status:'تحت المراجعة',submittedAt:td(),submittedBy:'مدير النادي الرياضي'})});
+        expectedBeneficiaries:+document.getElementById('sportsReqParticipants').value,participants:+document.getElementById('sportsReqParticipants').value,startTime:document.getElementById('sportsReqStartTime')?.value||'09:00',teams:+document.getElementById('sportsReqTeams').value,universities:+document.getElementById('sportsReqUniversities').value,capacity:+document.getElementById('sportsReqCapacity').value,budget:+document.getElementById('sportsReqBudget').value,gender:document.getElementById('sportsReqGender').value,status:'تحت المراجعة',submittedAt:td(),submittedBy:'مدير النادي الرياضي'})});
  bind('submitClubRequest',()=>{
    const form=document.getElementById('submitClubRequest')?.closest('form');
    if(!validateRequiredContainer(form))return;
@@ -5731,6 +5737,7 @@ window.addEventListener('DOMContentLoaded',()=>{
    name:document.getElementById('clubEventName').value,
    description:normalizeEventDescription(document.getElementById('clubEventDescription')?.value),
    date:d,
+   startTime:document.getElementById('clubEventStartTime')?.value||'09:00',
    location:document.getElementById('clubEventLocation').value,
    participants:document.getElementById('clubEventParticipants').value,
    supervisor:document.getElementById('clubEventSupervisor').value,
@@ -5746,7 +5753,7 @@ window.addEventListener('DOMContentLoaded',()=>{
  const form=document.getElementById('submitVolunteerOpportunity')?.closest('form');
  if(!validateRequiredContainer(form))return;
 
- push(K.vol,{id:id('vo'),type:document.getElementById('volunteerType').value,capacity:+document.getElementById('volunteerCapacity').value,name:document.getElementById('volunteerEventName').value,description:normalizeEventDescription(document.getElementById('volunteerEventDescription')?.value),date:document.getElementById('volunteerEventDate').value,sponsor:document.getElementById('volunteerSponsor').value,owner:document.getElementById('volunteerOwner').value,location:document.getElementById('volunteerLocation').value,budget:+document.getElementById('volunteerBudget').value,gender:'الاثنان معًا',status:'تحت المراجعة',submittedAt:td(),submittedBy:'مدير الأنشطة الطلابية'});
+ push(K.vol,{id:id('vo'),type:document.getElementById('volunteerType').value,capacity:+document.getElementById('volunteerCapacity').value,name:document.getElementById('volunteerEventName').value,description:normalizeEventDescription(document.getElementById('volunteerEventDescription')?.value),date:document.getElementById('volunteerEventDate').value,startTime:document.getElementById('volunteerEventStartTime')?.value||'09:00',sponsor:document.getElementById('volunteerSponsor').value,owner:document.getElementById('volunteerOwner').value,location:document.getElementById('volunteerLocation').value,budget:+document.getElementById('volunteerBudget').value,gender:'الاثنان معًا',status:'تحت المراجعة',submittedAt:td(),submittedBy:'مدير الأنشطة الطلابية'});
 });
  renderAll();
 });
@@ -7008,9 +7015,9 @@ function renderCouncil(){
   if(activityBody)activityBody.innerHTML=activities.length?activities.map(row=>`<tr>
     <td><strong>${row.name}</strong></td><td>${row.date}</td><td>${row.category}</td><td>${money(row.budget)}</td>
     <td>${row.status==='مقبول'?'<span class="request-status accepted">مقبول</span>':row.status==='مرفوض'?'<span class="request-status rejected">مرفوض</span>':'<span class="request-status pending">تحت المراجعة</span>'}</td>
-    <td>${row.finished?'<span class="event-finished-badge">منتهي</span>':'قائم'}</td>
+    <td>${window.v32ReportBadge?.(row,V30.councilActivities)||'—'}</td><td>${row.finished?'<span class="event-finished-badge">منتهي</span>':'قائم'}</td>
     <td>${row.status==='مقبول'&&!row.finished?`<button class="finish-event-btn" data-finish-store="${V30.councilActivities}" data-finish-id="${row.id}" type="button">إنهاء الحدث</button>`:'—'}</td>
-  </tr>`).join(''):'<tr><td colspan="7">لا توجد أنشطة.</td></tr>';
+  </tr>`).join(''):'<tr><td colspan="8">لا توجد أنشطة.</td></tr>';
 
   const meetingBody=document.getElementById('councilMeetingRows');
   if(meetingBody)meetingBody.innerHTML=meetings.length?meetings.map(row=>`<tr>
@@ -7336,6 +7343,7 @@ function bindV30(){
       description:document.getElementById('councilActivityDescription').value.trim(),
       category:document.getElementById('councilActivityCategory').value,
       date:document.getElementById('councilActivityDate').value,
+      startTime:document.getElementById('councilActivityStartTime')?.value||'09:00',
       location:document.getElementById('councilActivityLocation').value.trim(),
       gender:document.getElementById('councilActivityGender').value,
       capacity:+document.getElementById('councilActivityCapacity').value,
@@ -7581,8 +7589,8 @@ const V309_ROLE_ACCESS={
   coach:new Set(['sports-request','athletes','reports']),
   activities_manager:new Set(['activities','athletes','reports','volunteer','approvals']),
   student_account:new Set(['agreement','student']),
-  faculty:new Set(['clubs']),
-  student_council:new Set(['student-council'])
+  faculty:new Set(['clubs','reports']),
+  student_council:new Set(['student-council','reports'])
 };
 
 const V309_ROLE_HOME={
@@ -7791,3 +7799,68 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.documentElement.dataset.sahBuild='31.2';
   console.info('SAH build 31.2 loaded');
 });
+
+
+/* ==========================================================
+   SAH V32.0 — report-gated lifecycle + event participant index
+   ========================================================== */
+(function(){
+'use strict';
+const V32={sports:'sah-v22-sports',club:'sah-v22-club-events',volunteer:'sah-v22-vol',council:'sah-v30-council-activities',apps:'sah-v22-apps',reports:'sah-v15-local-activities'};
+let v32PendingFinish=null;
+let v32PendingReport=null;
+const v32Selected={sports:'',club:'',volunteer:'',council:''};
+function read(k,f=[]){try{const x=JSON.parse(localStorage.getItem(k)||'null');return x??f}catch{return f}}
+function write(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function role(){return document.getElementById('activeRole')?.value||'system'}
+function eventKey(store,id){return `${store}::${id}`}
+function reports(){return [...(window.SAH_DATA?.evidenceRecords||[]),...read(V32.reports,[])]}
+function eventReport(row,store){
+ const rs=reports();
+ return rs.find(r=>(r.sourceEventId&&String(r.sourceEventId)===String(row.id)&&( !r.sourceEventStore || r.sourceEventStore===store)) || ((!r.sourceEventId)&&String(r.activity||'').trim()===String(row.name||'').trim()&&String(r.date||'')===String(row.date||'')));
+}
+function hasReport(row,store){return !!eventReport(row,store)}
+window.v32ReportBadge=function(row,store){return hasReport(row,store)?'<span class="report-link-badge registered">✓ <b>مسجل</b></span>':'<span class="report-link-badge missing">× <b>غير مسجل</b></span>'}
+function storeRows(store){return read(store,[])}
+function findEvent(store,id){return storeRows(store).find(r=>String(r.id)===String(id))}
+function apps(){return read(V32.apps,[])}
+function acceptedCount(id){return apps().filter(a=>String(a.requestId)===String(id)&&a.status==='مقبول').length}
+function eventScope(row,store){if(store===V32.sports)return 'sports';if(store===V32.club)return 'club';if(store===V32.volunteer)return 'volunteer';if(store===V32.council)return 'council';return ''}
+function accessibleStores(){const r=role();if(['sports_manager','coach'].includes(r))return [V32.sports];if(r==='faculty')return [V32.club];if(r==='activities_manager')return [V32.club,V32.volunteer];if(r==='student_council')return [V32.council];return [V32.sports,V32.club,V32.volunteer,V32.council]}
+function unreportedOpenCount(){return accessibleStores().reduce((n,s)=>n+storeRows(s).filter(e=>e.status!=='مرفوض'&&!e.finished&&!hasReport(e,s)).length,0)}
+function canCreateMore(){return unreportedOpenCount()<6}
+function blockCreateIfNeeded(e){if(canCreateMore())return false;e.preventDefault();e.stopImmediatePropagation();window.showToast?.('لديك 6 أحداث غير مغلقة أو بلا تقارير. أغلق الأحداث وسجل تقاريرها قبل رفع فعالية جديدة.');return true}
+function migrate(){[V32.sports,V32.club,V32.volunteer,V32.council].forEach(store=>{const rows=storeRows(store);let c=false;rows.forEach(r=>{if(!r.startTime){r.startTime='09:00';c=true}if(r.expectedBeneficiaries==null){r.expectedBeneficiaries=Number(r.participants)||Number(r.capacity)||0;c=true}});if(c)write(store,rows)})}
+
+function eventDateTime(row){const d=row.date||'';const t=row.startTime||'09:00';return d?new Date(`${d}T${t}:00`):null}
+function words15(v){return String(v||'').trim().split(/\s+/).filter(Boolean).slice(0,15).join(' ')}
+function openReportRequired(store,id){v32PendingReport={store,id};const row=findEvent(store,id);const m=document.getElementById('reportRequiredMessage');if(m)m.textContent=`لا يمكن إنهاء «${row?.name||'الحدث'}» قبل تسجيل وربط تقريره في التقارير والتحليلات.`;document.getElementById('reportRequiredModal')?.classList.remove('hidden')}
+function closeReportRequired(){document.getElementById('reportRequiredModal')?.classList.add('hidden')}
+function goReport(){if(!v32PendingReport)return;const target=v32PendingReport;closeReportRequired();window.route?.('reports');setTimeout(()=>{v32PendingReport=target;document.getElementById('openAddActivity')?.click();setTimeout(()=>populateReportEvents(target),120)},180)}
+function earlyMode(row){const now=new Date(), dt=eventDateTime(row);if(!dt)return '';const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;if(row.date>today)return 'not-started';if(row.date===today&&now<dt)return 'same-day';return ''}
+function openEarly(store,id,mode){v32PendingFinish={store,id,mode};const row=findEvent(store,id);const label=document.getElementById('earlyFinishReasonLabel');const desc=document.getElementById('earlyFinishDescription');if(mode==='not-started'){label.textContent='سبب عدم بدء الحدث';desc.textContent=`موعد «${row?.name||'الحدث'}» لم يبدأ بعد. اذكر سبب إنهائه قبل الموعد.`}else{label.textContent='سبب إنهاء الحدث باكرًا';desc.textContent=`يتم إنهاء «${row?.name||'الحدث'}» في نفس يومه وقبل وقت البدء المسجل.`}const ta=document.getElementById('earlyFinishReason');ta.value='';document.getElementById('earlyFinishWordCount').textContent='0';document.getElementById('earlyFinishModal')?.classList.remove('hidden');setTimeout(()=>ta.focus(),80)}
+function closeEarly(){document.getElementById('earlyFinishModal')?.classList.add('hidden');v32PendingFinish=null}
+function finishNow(store,id,reason='',mode=''){const rows=storeRows(store), row=rows.find(r=>String(r.id)===String(id));if(!row)return;row.finished=true;row.finishedAt=new Date().toISOString();if(reason){row.earlyEndReason=reason;row.earlyEndType=mode}write(store,rows);const aa=apps();aa.forEach(a=>{if(String(a.requestId)!==String(id))return;if(a.status==='مقبول'){a.surveyAvailable=true;a.surveyAvailableAt=new Date().toISOString()}else if(!a.status||a.status==='تحت المراجعة'){a.status='انتهى الحدث';a.closedByEventEnd=true;a.closedAt=new Date().toISOString()}});write(V32.apps,aa);window.renderAll?.();setTimeout(refresh,80);window.showToast?.('تم إنهاء الحدث وتحديث المشاركين وحالة التقرير.')}
+function requestFinish(store,id){const row=findEvent(store,id);if(!row)return;if(!hasReport(row,store)){openReportRequired(store,id);return}const mode=earlyMode(row);if(mode){openEarly(store,id,mode);return}v32PendingFinish={store,id,mode:''};const msg=document.getElementById('finishEventMessage');if(msg)msg.textContent=`هل أنت متأكد من إنهاء «${row.name}»؟ التقرير مرتبط بالحدث وسيتم تفعيل التقييم للمشاركين المقبولين.`;document.getElementById('finishEventModal')?.classList.remove('hidden')}
+function confirmNormalFinish(){if(!v32PendingFinish)return;const x=v32PendingFinish;v32PendingFinish=null;document.getElementById('finishEventModal')?.classList.add('hidden');finishNow(x.store,x.id)}
+function confirmEarly(){if(!v32PendingFinish)return;const ta=document.getElementById('earlyFinishReason'), raw=ta.value.trim(), words=raw.split(/\s+/).filter(Boolean);if(!raw){window.showToast?.('سبب الإنهاء إلزامي.');ta.focus();return}if(words.length>15){window.showToast?.('سبب الإنهاء يجب ألا يتجاوز 15 كلمة.');ta.focus();return}const x=v32PendingFinish;document.getElementById('earlyFinishModal')?.classList.add('hidden');v32PendingFinish=null;finishNow(x.store,x.id,raw,x.mode)}
+function eventsForReports(){return accessibleStores().flatMap(store=>storeRows(store).filter(e=>e.status==='مقبول'&&!hasReport(e,store)).map(e=>({...e,__store:store}))) }
+function populateReportEvents(force=null){const select=document.getElementById('activitySourceEvent');if(!select)return;const current=force?.id||select.value;const rows=eventsForReports();select.innerHTML='<option value="">اختر حدثًا لم يسجل له تقرير بعد</option>'+rows.map(e=>`<option value="${e.id}" data-store="${e.__store}">${e.name} — ${e.date} — ${scopeLabel(eventScope(e,e.__store))}</option>`).join('');if(current){select.value=String(current);const opt=select.selectedOptions[0];if(opt)autofillReport(select)}}
+function scopeLabel(s){return s==='sports'?'الشؤون الرياضية':s==='club'?'الأندية الطلابية':s==='volunteer'?'الفرص التطوعية':'المجلس الطلابي'}
+function autofillReport(select){const opt=select.selectedOptions[0];if(!opt?.value)return;const store=opt.dataset.store,row=findEvent(store,opt.value);if(!row)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};set('activityName',row.name);set('activityDate',row.date);set('activityDays',row.days||1);set('activityBeneficiaries',row.expectedBeneficiaries||row.capacity||0);set('activityPlayers',acceptedCount(row.id));set('activityGender',row.gender||'الاثنان معًا');set('activityBudget',row.budget||0);let cat=store===V32.sports?'الأنشطة الرياضية':store===V32.volunteer?'الأنشطة و البرامج المجتمعية و التطوعية':store===V32.council?(row.category||'برامج عامة على مستوى الجامعة'):'برامج عامة على مستوى الجامعة';set('activityEventCategory',cat);const game=row.game||row.type||row.category||'أخرى';set('activityGameType',game);const other=/أخرى|اخرى|رياضة أخرى/.test(game);document.getElementById('activityGameTypeOtherWrap')?.classList.toggle('hidden',!other);const otherInput=document.getElementById('activityGameTypeOther');if(otherInput){otherInput.required=other;if(!other)otherInput.value=''}}
+function reportBadgeFor(row,store){return window.v32ReportBadge(row,store)}
+function eventList(scope){const store=scope==='sports'?V32.sports:scope==='club'?V32.club:scope==='volunteer'?V32.volunteer:V32.council;return storeRows(store).filter(e=>e.status==='مقبول').map(e=>({...e,__store:store}))}
+function acceptedFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&a.status==='مقبول').length}
+function pendingFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&(!a.status||a.status==='تحت المراجعة')).length}
+function rejectedFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&a.status==='مرفوض').length}
+function participantScopeIds(scope){return {sports:['sportsApplicantRows','sportsApplicantSearch','sportsApplicantStatus'],club:['clubApplicantRows','clubApplicantSearch','clubApplicantStatus'],volunteer:['volunteerApplicantRows','volunteerApplicantSearch','volunteerApplicantStatus'],council:['councilApplicantRows','councilApplicantSearch','councilApplicantStatus']}[scope]}
+function renderIndex(scope){const events=eventList(scope), index=document.getElementById(`${scope}ParticipantEventIndex`);if(!index)return;if(!v32Selected[scope]||!events.some(e=>String(e.id)===String(v32Selected[scope])))v32Selected[scope]=events[0]?.id||'';index.innerHTML=events.length?events.map(e=>{const ac=acceptedFor(e.id),pc=pendingFor(e.id),rc=rejectedFor(e.id),cap=Number(e.capacity)||0,vac=Math.max(0,cap-ac);return `<button type="button" class="participant-event-card ${String(v32Selected[scope])===String(e.id)?'active':''}" data-select-participant-event="${e.id}" data-scope="${scope}"><span>${e.name}</span><small>${e.date}</small><div><b>${ac}<i>مقبول</i></b><b>${pc}<i>مراجعة</i></b><b>${rc}<i>مرفوض</i></b><b class="vacant">${vac}<i>مقاعد شاغرة</i></b></div>${reportBadgeFor(e,e.__store)}</button>`}).join(''):'<div class="participant-index-empty">لا توجد فعاليات معتمدة.</div>';renderParticipants(scope)}
+function participantAction(a,event,scope){const cap=Number(event.capacity)||0, ac=acceptedFor(event.id), full=cap>0&&ac>=cap;if(a.status==='مقبول')return `<div class="participant-final accepted"><span>مقبول</span><button class="v32-cancel-accept" data-id="${a.id}" data-scope="${scope}" type="button">إلغاء المشاركة</button><div class="v32-cancel-accept-editor hidden"><input maxlength="160" placeholder="سبب إلغاء القبول — 15 كلمة كحد أقصى"><button class="v32-confirm-cancel-accept" data-id="${a.id}" data-scope="${scope}" type="button">تأكيد</button></div></div>`;if(a.status==='مرفوض')return `<div class="participant-final rejected"><span>مرفوض</span><button class="v32-undo-reject" data-id="${a.id}" data-scope="${scope}" type="button">إلغاء الرفض</button></div>`;return `<div class="participant-pending-actions"><button class="v32-accept-participant" data-id="${a.id}" data-scope="${scope}" type="button" ${full?'disabled':''}>${full?'اكتملت المقاعد':'قبول'}</button><button class="v32-reject-participant" data-id="${a.id}" data-scope="${scope}" type="button">رفض</button><div class="v32-reject-editor hidden"><input placeholder="سبب الرفض"><button class="v32-confirm-reject" data-id="${a.id}" data-scope="${scope}" type="button">تأكيد</button></div></div>`}
+function renderParticipants(scope){const ids=participantScopeIds(scope);if(!ids)return;const [tbodyId,searchId,statusId]=ids,body=document.getElementById(tbodyId);if(!body)return;const event=eventList(scope).find(e=>String(e.id)===String(v32Selected[scope]));if(!event){body.innerHTML='<tr><td colspan="8">اختر حدثًا لعرض المشاركين.</td></tr>';return}const q=(document.getElementById(searchId)?.value||'').toLowerCase(),st=document.getElementById(statusId)?.value||'all';let rows=apps().filter(a=>String(a.requestId)===String(event.id)&&!a.closedByEventEnd&&a.status!=='انتهى الحدث');rows=rows.filter(a=>st==='all'||String(a.status||'تحت المراجعة')===st).filter(a=>!q||[a.student?.name,a.student?.studentId,a.student?.email,a.student?.phone].join(' ').toLowerCase().includes(q));body.innerHTML=rows.length?rows.map(a=>`<tr><td><strong>${event.name}</strong></td><td>${a.student?.name||'—'}</td><td>${a.student?.studentId||'—'}</td><td>${a.student?.email||'—'}</td><td>${a.student?.age||'—'}</td><td>${a.student?.gender||'—'}</td><td>${a.student?.phone||'—'}</td><td>${participantAction(a,event,scope)}</td></tr>`).join(''):'<tr><td colspan="8">لا توجد طلبات مشاركين مطابقة.</td></tr>'}
+function updateApp(id,fn){const aa=apps(),a=aa.find(x=>x.id===id);if(!a)return;fn(a);write(V32.apps,aa);window.renderAll?.();setTimeout(refresh,40)}
+function acceptParticipant(id,scope){const a=apps().find(x=>x.id===id),event=eventList(scope).find(e=>String(e.id)===String(a?.requestId));if(!a||!event)return;const cap=Number(event.capacity)||0;if(cap>0&&acceptedFor(event.id)>=cap){window.showToast?.('لا توجد مقاعد شاغرة. ألغِ مشاركة أحد المقبولين قبل قبول مشارك جديد.');return}updateApp(id,a=>{a.status='مقبول';a.reason='';a.acceptedAt=new Date().toISOString()})}
+function exportParticipants(scope,type){const event=eventList(scope).find(e=>String(e.id)===String(v32Selected[scope]));if(!event){window.showToast?.('اختر حدثًا أولًا.');return}const rows=apps().filter(a=>String(a.requestId)===String(event.id));const data=rows.map((a,i)=>[i+1,a.student?.name||'',a.student?.studentId||'',a.student?.email||'',a.student?.phone||'',a.student?.gender||'',a.status||'تحت المراجعة']);if(type==='excel'){const csv='\ufeff'+[['#','الاسم','الرقم الجامعي','الإيميل','الجوال','الجنس','الحالة'],...data].map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`participants-${event.name}.csv`;a.click();URL.revokeObjectURL(url)}else{const w=window.open('','_blank');w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>${event.name}</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccd6e5;padding:8px;text-align:right}th{background:#eef4ff}</style></head><body><h2>${event.name}</h2><p>عدد المشاركين: ${rows.length} — المقبولون: ${acceptedFor(event.id)}</p><table><thead><tr><th>#</th><th>الاسم</th><th>الرقم الجامعي</th><th>الإيميل</th><th>الجوال</th><th>الجنس</th><th>الحالة</th></tr></thead><tbody>${data.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}}
+function refresh(){migrate();['sports','club','volunteer','council'].forEach(renderIndex);populateReportEvents();document.querySelectorAll('.finish-event-btn').forEach(()=>{});}
+function bind(){document.addEventListener('click',e=>{const finish=e.target.closest('.finish-event-btn');if(finish){e.preventDefault();e.stopImmediatePropagation();requestFinish(finish.dataset.finishStore,finish.dataset.finishId);return}const go=e.target.closest('#goToEventReport');if(go){goReport();return}if(e.target.closest('[data-close-report-required]')){closeReportRequired();return}if(e.target.closest('[data-close-early-finish]')){closeEarly();return}const cf=e.target.closest('#confirmEarlyFinish');if(cf){confirmEarly();return}const normal=e.target.closest('#confirmFinishEvent');if(normal&&v32PendingFinish){e.preventDefault();e.stopImmediatePropagation();confirmNormalFinish();return}const sel=e.target.closest('[data-select-participant-event]');if(sel){v32Selected[sel.dataset.scope]=sel.dataset.selectParticipantEvent;renderIndex(sel.dataset.scope);return}const ex=e.target.closest('[data-participant-export]');if(ex){exportParticipants(ex.dataset.scope,ex.dataset.participantExport);return}const ac=e.target.closest('.v32-accept-participant');if(ac){acceptParticipant(ac.dataset.id,ac.dataset.scope);return}const ro=e.target.closest('.v32-reject-participant');if(ro){ro.closest('.participant-pending-actions')?.querySelector('.v32-reject-editor')?.classList.remove('hidden');return}const rc=e.target.closest('.v32-confirm-reject');if(rc){const ed=rc.closest('.v32-reject-editor'),reason=ed?.querySelector('input')?.value.trim();if(!reason){window.showToast?.('سبب الرفض إلزامي.');return}updateApp(rc.dataset.id,a=>{a.status='مرفوض';a.reason=reason});return}const ca=e.target.closest('.v32-cancel-accept');if(ca){ca.closest('.participant-final')?.querySelector('.v32-cancel-accept-editor')?.classList.remove('hidden');return}const cc=e.target.closest('.v32-confirm-cancel-accept');if(cc){const ed=cc.closest('.v32-cancel-accept-editor'),input=ed?.querySelector('input'),reason=input?.value.trim()||'',wc=reason.split(/\s+/).filter(Boolean).length;if(!reason){window.showToast?.('سبب إلغاء المشاركة إلزامي.');return}if(wc>15){window.showToast?.('سبب إلغاء المشاركة لا يتجاوز 15 كلمة.');return}updateApp(cc.dataset.id,a=>{a.status='تحت المراجعة';a.acceptanceCancelledReason=reason;a.acceptanceCancelledAt=new Date().toISOString()});return}const ur=e.target.closest('.v32-undo-reject');if(ur){updateApp(ur.dataset.id,a=>{a.status='تحت المراجعة';a.reason='';a.rejectionCancelledAt=new Date().toISOString()});return}},true);document.getElementById('activitySourceEvent')?.addEventListener('change',e=>autofillReport(e.target));document.getElementById('openAddActivity')?.addEventListener('click',()=>setTimeout(()=>populateReportEvents(v32PendingReport),80));document.getElementById('saveNewActivity')?.addEventListener('click',()=>setTimeout(refresh,260));document.getElementById('earlyFinishReason')?.addEventListener('input',e=>{const words=e.target.value.trim().split(/\s+/).filter(Boolean);if(words.length>15)e.target.value=words.slice(0,15).join(' ');document.getElementById('earlyFinishWordCount').textContent=e.target.value.trim()?e.target.value.trim().split(/\s+/).length:0});['sportsApplicantSearch','sportsApplicantStatus','clubApplicantSearch','clubApplicantStatus','volunteerApplicantSearch','volunteerApplicantStatus','councilApplicantSearch','councilApplicantStatus'].forEach(id=>document.getElementById(id)?.addEventListener(id.includes('Search')?'input':'change',()=>{const s=id.startsWith('sports')?'sports':id.startsWith('club')?'club':id.startsWith('volunteer')?'volunteer':'council';renderParticipants(s)}));document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!canCreateMore())blockCreateIfNeeded(e)},true)}
+window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();setTimeout(refresh,250);document.documentElement.dataset.sahBuild='32.0';console.info('SAH build 32.0 loaded')});
+})();

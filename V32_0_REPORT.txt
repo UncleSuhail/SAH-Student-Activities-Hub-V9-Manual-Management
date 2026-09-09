@@ -1,0 +1,20 @@
+SAH V32.0
+=========
+- Event completion is now report-gated across Sports, Clubs, Volunteer, and Student Council workflows.
+- Missing report opens a branded UBT modal and routes directly to Reports & Analytics -> Add Activity.
+- Add Activity now selects an unreported event from a permission-scoped dropdown and auto-fills event-linked fields.
+- Existing events are migrated immediately with default start time / expected-beneficiary compatibility values.
+- Early completion before event date requires "سبب عدم بدء الحدث" (max 15 words).
+- Same-day completion before event start time requires "سبب إنهاء الحدث باكرًا" (max 15 words).
+- Early-end reasons appear in Student Affairs approval rows.
+- Users with 6 open/unreported events are blocked from creating another event until events are closed/reported.
+- Sports "عدد المشاركين" renamed to "عدد المستفيدين المتوقع" and saved as expectedBeneficiaries.
+- Report participant count is based on accepted participants after the event.
+- Event tables include a professional Report status badge (registered / missing).
+- Participant approval is now event-indexed instead of one accumulated list.
+- Each event shows accepted / pending / rejected / vacant seats.
+- Acceptance cannot exceed the event capacity.
+- Accepted participation can be cancelled with a mandatory reason up to 15 words; rejected status can be undone.
+- Event-specific participant PDF and Excel exports added.
+- Search and status filters remain available per event.
+- JavaScript syntax validation passed.
