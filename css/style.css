@@ -14429,3 +14429,41 @@ body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
   cursor:not-allowed!important;
   opacity:.72!important;
 }
+
+
+/* ==========================================================
+   SAH V32.10 — center annual-budget edit control
+   ========================================================== */
+#generalAnnualBudgetCard{
+  position:relative!important;
+}
+
+#generalAnnualBudgetCard #openAnnualBudgetEditor{
+  position:absolute!important;
+  inset-inline-start:50%!important;
+  inset-inline-end:auto!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:34px!important;
+  transform:translateX(-50%)!important;
+  margin:0!important;
+  min-width:96px!important;
+  min-height:28px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  z-index:120!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+
+/* Give the circle text enough breathing room so the centered control never collides. */
+#generalAnnualBudgetCard #generalAnnualBudgetCaption{
+  padding-bottom:34px!important;
+}
+
+[dir="rtl"] #generalAnnualBudgetCard #openAnnualBudgetEditor,
+[dir="ltr"] #generalAnnualBudgetCard #openAnnualBudgetEditor{
+  inset-inline-start:50%!important;
+  transform:translateX(-50%)!important;
+}

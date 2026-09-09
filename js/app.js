@@ -8516,7 +8516,7 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     refreshBudgetUI();
 
     document.documentElement.dataset.sahBuild='32.9';
-    console.info('SAH build 32.9 budget button visibility + Dean lock loaded');
+    console.info('SAH build 32.10 budget button visibility + Dean lock loaded');
   }
 
   window.SAH_DEAN_BUDGET={
