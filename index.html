@@ -6,7 +6,7 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="#082b63" name="theme-color"/>
 <title>Student Activities Platform | UBT</title>
-<link href="css/style.css?v=32.1" rel="stylesheet"/>
+<link href="css/style.css?v=31.2" rel="stylesheet"/>
 <style id="sah-mobile-critical-v201">
 @media (max-width:1100px){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
@@ -70,7 +70,7 @@
 }
 </style>
 </head>
-<body class="login-mode" data-sah-version="32.1">
+<body class="login-mode" data-sah-version="31.2">
 <section class="login-page" id="login">
 <div class="login-bg"></div>
 <div class="login-card">
@@ -163,6 +163,7 @@
 <div class="nav-group general-indicator-nav open">
 <button aria-expanded="true" class="nav-group-title" type="button">
 <span class="group-left">
+
 <span class="nav-group-name">المؤشر العام</span>
 </span>
 </button>
@@ -176,6 +177,7 @@
 <div class="nav-group open">
 <button aria-expanded="true" class="nav-group-title" type="button">
 <span class="group-left">
+
 <span class="nav-group-name">الشؤون الرياضية</span>
 </span>
 </button>
@@ -213,6 +215,7 @@
 <div class="nav-group">
 <button aria-expanded="false" class="nav-group-title" type="button">
 <span class="group-left">
+
 <span class="nav-group-name">خدمات الطلبة</span>
 </span>
 </button>
@@ -230,6 +233,7 @@
 <div class="nav-group">
 <button aria-expanded="false" class="nav-group-title" type="button">
 <span class="group-left">
+
 <span class="nav-group-name">الأنشطة الطلابية</span>
 </span>
 </button>
@@ -1117,7 +1121,7 @@
 <textarea data-word-counter="volunteerEventDescriptionCounter" data-word-limit="35" id="volunteerEventDescription" placeholder="اكتب وصفًا مختصرًا للحدث بحد أقصى 35 كلمة" required="" rows="3"></textarea>
 <small class="event-description-counter" id="volunteerEventDescriptionCounter">0 / 35 كلمة</small>
 </label>
-<label><span>تاريخ الحدث</span><input id="volunteerEventDate" required="" type="date"/></label><label class="event-start-time-field"><span>وقت بدء الحدث</span><input id="volunteerEventStartTime" required="" type="time" value="09:00"/></label>
+<label><span>تاريخ الحدث</span><input id="volunteerEventDate" required="" type="date"/></label>
 <label><span>الجهة الراعية</span><input id="volunteerSponsor" required=""/></label>
 <label><span>الجهة المسؤولة</span><input id="volunteerOwner" required=""/></label>
 <label><span>مكان الحدث</span><input id="volunteerLocation" required=""/>
@@ -1140,11 +1144,11 @@
 </select>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>الحدث</th><th>التاريخ</th><th>السعة</th><th>الجهة المسؤولة</th><th>الميزانية</th><th>الحالة</th><th>سبب الرفض</th><th>التقرير</th><th>حالة التنفيذ</th></tr></thead>
+<thead><tr><th>الحدث</th><th>التاريخ</th><th>السعة</th><th>الجهة المسؤولة</th><th>الميزانية</th><th>الحالة</th><th>سبب الرفض</th><th>حالة التنفيذ</th></tr></thead>
 <tbody id="volunteerRequestRows"></tbody>
 </table></div>
 </div>
-<div class="section-title participant-section-title"><div><h3>طلبات المشاركين</h3><p>اختر الفرصة التطوعية لعرض المشاركين المرتبطين بها واتخاذ القرار لكل طلب.</p></div></div><div class="card table-card participant-review-card"><div class="participant-index-shell" data-participant-scope="volunteer"><div class="participant-index-heading"><div><span>فهرس الفرص والمشاركين</span><h4>المشاركون حسب كل فرصة تطوعية</h4></div><div class="participant-export-actions"><button data-participant-export="excel" data-scope="volunteer" type="button">Excel</button><button data-participant-export="pdf" data-scope="volunteer" type="button">PDF</button></div></div><div class="participant-event-index" id="volunteerParticipantEventIndex"></div></div><div class="records-toolbar"><div class="records-search"><span aria-hidden="true" data-icon="search"></span><input id="volunteerApplicantSearch" placeholder="ابحث باسم المشارك أو الرقم الجامعي أو الإيميل" type="search"/></div><select class="records-filter" id="volunteerApplicantStatus"><option value="all">كل الحالات</option><option value="مقبول">المقبولة</option><option value="مرفوض">المرفوضة</option><option value="تحت المراجعة">قيد المراجعة</option></select></div><div class="table-wrap"><table><thead><tr><th>الحدث</th><th>الاسم</th><th>الرقم الجامعي</th><th>الإيميل</th><th>العمر</th><th>الجنس</th><th>الجوال</th><th>القرار</th></tr></thead><tbody id="volunteerApplicantRows"></tbody></table></div></div></section>
+</section>
 <section class="page" id="page-student"><div class="page-back-bar"><button class="page-back-btn" data-role-home-back="1" type="button"><span aria-hidden="true">←</span><strong>الرجوع</strong></button><small>العودة إلى الصفحة الرئيسية المخصصة لحسابك</small></div>
 <div class="section-title"><div><h3>بوابة الطالب</h3><p>الفعاليات المعتمدة المتاحة للتقديم ومتابعة حالة الطلبات.</p></div></div><div class="student-quick-links-section" id="studentQuickLinks">
 <div class="section-title compact-title">
@@ -1230,13 +1234,13 @@
 <textarea data-word-counter="sportsReqDescriptionCounter" data-word-limit="35" id="sportsReqDescription" placeholder="اكتب وصفًا مختصرًا للحدث بحد أقصى 35 كلمة" required="" rows="3"></textarea>
 <small class="event-description-counter" id="sportsReqDescriptionCounter">0 / 35 كلمة</small>
 </label>
-<label><span>تاريخ الحدث</span><input id="sportsReqDate" required="" type="date"/></label><label class="event-start-time-field"><span>وقت بدء الحدث</span><input id="sportsReqStartTime" required="" type="time" value="09:00"/></label>
+<label><span>تاريخ الحدث</span><input id="sportsReqDate" required="" type="date"/></label>
 <label><span>نوع اللعبة</span><select id="sportsReqGame" required=""><option disabled="" selected="" value="">اختر نوع اللعبة</option><option>كرة القدم</option><option>كرة السلة</option><option>الكرة الطائرة</option><option>كرة اليد</option><option>التنس</option><option>تنس الطاولة</option><option>السباحة</option><option>ألعاب القوى</option><option>الكاراتيه</option><option>الجودو</option><option>البلياردو</option><option>الشطرنج</option><option>رياضة أخرى</option></select></label>
 <label>
 <span>مكان الحدث</span>
 <input id="sportsReqLocation" placeholder="مثال: الصالة الرياضية الرئيسية" required="" type="text"/>
 </label>
-<label><span>عدد المستفيدين المتوقع</span><input id="sportsReqParticipants" min="1" required="" type="number"/></label>
+<label><span>عدد المشاركين</span><input id="sportsReqParticipants" min="1" required="" type="number"/></label>
 <label><span>عدد الفرق المشاركة</span><input id="sportsReqTeams" min="0" required="" type="number" value="0"/></label>
 <label><span>عدد الجامعات المشاركة</span><input id="sportsReqUniversities" min="0" required="" type="number" value="0"/></label>
 <label><span>الحد الأقصى للمتقدمين</span><input id="sportsReqCapacity" min="1" required="" type="number"/>
@@ -1259,11 +1263,11 @@
 <option value="all">كل الحالات</option><option value="مقبول">المقبولة</option><option value="مرفوض">المرفوضة</option><option value="تحت المراجعة">قيد المراجعة</option>
 </select>
 </div>
-<div class="table-wrap"><table><thead><tr><th>الحدث</th><th>التاريخ</th><th>اللعبة</th><th>السعة</th><th>الميزانية</th><th>الحالة</th><th>سبب الرفض</th><th>التقرير</th><th>حالة التنفيذ</th></tr></thead><tbody id="sportsRequestRows"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>الحدث</th><th>التاريخ</th><th>اللعبة</th><th>السعة</th><th>الميزانية</th><th>الحالة</th><th>سبب الرفض</th><th>حالة التنفيذ</th></tr></thead><tbody id="sportsRequestRows"></tbody></table></div>
 </div>
 <div class="card table-card records-table-card">
 <h4>طلبات المشاركين</h4>
-<div class="participant-index-shell" data-participant-scope="sports"><div class="participant-index-heading"><div><span>فهرس الفعاليات والمشاركين</span><h4>اختر الحدث لعرض المشاركين المرتبطين به</h4></div><div class="participant-export-actions"><button data-participant-export="excel" data-scope="sports" type="button">Excel</button><button data-participant-export="pdf" data-scope="sports" type="button">PDF</button></div></div><div class="participant-event-index" id="sportsParticipantEventIndex"></div></div><div class="records-toolbar">
+<div class="records-toolbar">
 <div class="records-search">
 <span aria-hidden="true" data-icon="search"></span>
 <input autocomplete="off" id="sportsApplicantSearch" placeholder="ابحث باسم الحدث أو الطالب أو الرقم الجامعي أو الإيميل" type="search"/>
@@ -1304,7 +1308,7 @@
 <textarea data-word-counter="clubEventDescriptionCounter" data-word-limit="35" id="clubEventDescription" placeholder="اكتب وصفًا مختصرًا للحدث بحد أقصى 35 كلمة" required="" rows="3"></textarea>
 <small class="event-description-counter" id="clubEventDescriptionCounter">0 / 35 كلمة</small>
 </label>
-<label><span>تاريخ الحدث</span><input id="clubEventDate" required="" type="date"/></label><label class="event-start-time-field"><span>وقت بدء الحدث</span><input id="clubEventStartTime" required="" type="time" value="09:00"/></label><label><span>مكان الحدث</span><input id="clubEventLocation" required=""/></label>
+<label><span>تاريخ الحدث</span><input id="clubEventDate" required="" type="date"/></label><label><span>مكان الحدث</span><input id="clubEventLocation" required=""/></label>
 <label><span>الأفراد المشاركون وبياناتهم</span><textarea id="clubEventParticipants" required=""></textarea></label><label><span>المشرف المسؤول</span><input id="clubEventSupervisor" required=""/></label>
 <label><span>الفئة</span><select id="clubEventGender" required=""><option disabled="" selected="" value="">اختر الفئة</option><option>طلاب</option><option>طالبات</option><option>الاثنان معًا</option></select></label>
 <label><span>الحد الأقصى للمتقدمين</span><input id="clubEventCapacity" min="1" required="" type="number"/>
@@ -1340,11 +1344,11 @@
 <option value="all">كل الحالات</option><option value="مقبول">المقبولة</option><option value="مرفوض">المرفوضة</option><option value="تحت المراجعة">قيد المراجعة</option>
 </select>
 </div>
-<div class="table-wrap"><table><thead><tr><th>الحدث</th><th>النادي</th><th>التاريخ</th><th>المكان</th><th>السعة</th><th>الميزانية</th><th>الحالة</th><th>سبب الرفض</th><th>التقرير</th><th>حالة التنفيذ</th></tr></thead><tbody id="clubEventRequestRows"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>الحدث</th><th>النادي</th><th>التاريخ</th><th>المكان</th><th>السعة</th><th>الميزانية</th><th>الحالة</th><th>سبب الرفض</th><th>حالة التنفيذ</th></tr></thead><tbody id="clubEventRequestRows"></tbody></table></div>
 </div>
 <div class="card table-card records-table-card">
 <h4>طلبات المشاركين</h4>
-<div class="participant-index-shell" data-participant-scope="club"><div class="participant-index-heading"><div><span>فهرس الفعاليات والمشاركين</span><h4>اختر الحدث لعرض المشاركين المرتبطين به</h4></div><div class="participant-export-actions"><button data-participant-export="excel" data-scope="club" type="button">Excel</button><button data-participant-export="pdf" data-scope="club" type="button">PDF</button></div></div><div class="participant-event-index" id="clubParticipantEventIndex"></div></div><div class="records-toolbar">
+<div class="records-toolbar">
 <div class="records-search">
 <span aria-hidden="true" data-icon="search"></span>
 <input autocomplete="off" id="clubApplicantSearch" placeholder="ابحث باسم الحدث أو النادي أو الطالب أو الرقم الجامعي" type="search"/>
@@ -1425,7 +1429,7 @@
 <option>الأنشطة الرياضية</option><option>البرامج التدريبية</option><option>برامج عامة على مستوى الجامعة</option>
 </select>
 </label>
-<label><span>التاريخ</span><input id="councilActivityDate" required="" type="date"/></label><label class="event-start-time-field"><span>وقت بدء الحدث</span><input id="councilActivityStartTime" required="" type="time" value="09:00"/></label>
+<label><span>التاريخ</span><input id="councilActivityDate" required="" type="date"/></label>
 <label><span>المكان</span><input id="councilActivityLocation" required=""/></label>
 <label><span>الفئة</span>
 <select id="councilActivityGender" required="">
@@ -1438,14 +1442,14 @@
 </form>
 <div class="table-wrap">
 <table>
-<thead><tr><th>النشاط</th><th>التاريخ</th><th>النوع</th><th>الميزانية</th><th>الحالة</th><th>التقرير</th><th>حالة التنفيذ</th><th>الإجراء</th></tr></thead>
+<thead><tr><th>النشاط</th><th>التاريخ</th><th>النوع</th><th>الميزانية</th><th>الحالة</th><th>حالة التنفيذ</th><th>الإجراء</th></tr></thead>
 <tbody id="councilActivityRows"></tbody>
 </table>
 </div>
 </div>
 <div class="section-title council-participants-title"><div><h3>طلبات المشاركين</h3><p>طلبات الطلبة المتقدمين لأنشطة المجلس الطلابي. يمكن للرئيس ونائب الرئيس قبول أو رفض الطلب مع ذكر سبب الرفض.</p></div></div>
 <div class="card table-card council-participant-requests-card">
-<div class="participant-index-shell" data-participant-scope="council"><div class="participant-index-heading"><div><span>فهرس الفعاليات والمشاركين</span><h4>اختر الحدث لعرض المشاركين المرتبطين به</h4></div><div class="participant-export-actions"><button data-participant-export="excel" data-scope="council" type="button">Excel</button><button data-participant-export="pdf" data-scope="council" type="button">PDF</button></div></div><div class="participant-event-index" id="councilParticipantEventIndex"></div></div><div class="records-toolbar">
+<div class="records-toolbar">
 <div class="records-search"><span aria-hidden="true" data-icon="search"></span><input autocomplete="off" id="councilApplicantSearch" placeholder="ابحث باسم الحدث أو المشارك أو الرقم الجامعي أو الإيميل" type="search"/></div>
 <select class="records-filter" id="councilApplicantStatus"><option value="all">كل الحالات</option><option value="مقبول">المقبولة</option><option value="مرفوض">المرفوضة</option><option value="تحت المراجعة">قيد المراجعة</option></select>
 </div>
@@ -1693,7 +1697,7 @@
 <option value="فرصة تطوعية">فرصة تطوعية</option>
 </select>
 </div>
-<div class="table-wrap"><table><thead><tr><th>نوع الطلب</th><th>العنوان</th><th>مقدم الطلب</th><th>التاريخ</th><th>الفئة/السعة</th><th>الميزانية المطلوبة</th><th>الحالة</th><th>التقرير</th><th>سبب الإنهاء المبكر</th><th>الإجراء</th></tr></thead><tbody id="approvalRequestRows"></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>نوع الطلب</th><th>العنوان</th><th>مقدم الطلب</th><th>التاريخ</th><th>الفئة/السعة</th><th>الميزانية المطلوبة</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody id="approvalRequestRows"></tbody></table></div>
 </div>
 <div class="scholarship-approval-dashboard">
 <div class="section-title">
@@ -2021,24 +2025,24 @@
 <button class="btn outline" data-close-add-activity="" type="button">إغلاق</button>
 </div>
 <form class="activity-form" id="addActivityForm">
-<input id="activityEditKey" type="hidden" value=""/><label class="activity-source-event-field full-width-field"><span>الحدث المرتبط بالتقرير</span><select id="activitySourceEvent" required=""><option value="">اختر حدثًا لم يسجل له تقرير بعد</option></select><small>تظهر فقط الأحداث المتاحة حسب صلاحية حسابك والتي لم يسجل لها تقرير.</small></label>
-<label><span>اسم النشاط</span><input id="activityName" readonly="" required=""/></label>
-<label><span>التاريخ</span><input id="activityDate" readonly="" required="" type="date"/></label>
-<label><span>عدد الأيام</span><input id="activityDays" min="1" readonly="" required="" type="number" value="1"/></label>
-<label><span>عدد المستفيدين</span><input id="activityBeneficiaries" min="0" readonly="" required="" type="number" value="0"/></label>
-<label><span>عدد اللاعبين المشاركين</span><input id="activityPlayers" min="0" readonly="" required="" type="number" value="0"/></label>
-<label><span>الفئة</span><select class="auto-event-field" id="activityGender" required=""><option disabled="" selected="" value="">اختر الفئة</option><option value="طلاب">طلاب</option><option value="طالبات">طالبات</option></select></label>
-<label><span>فئة الحدث</span><select class="auto-event-field" id="activityEventCategory" required=""><option disabled="" selected="" value="">اختر فئة الحدث</option><option value="الأنشطة التوعوية">الأنشطة التوعوية</option><option value="الأنشطة و البرامج المجتمعية و التطوعية">الأنشطة و البرامج المجتمعية و التطوعية</option><option value="الأنشطة الثقافية">الأنشطة الثقافية</option><option value="الأنشطة العلمية">الأنشطة العلمية</option><option value="الأنشطة الفنية">الأنشطة الفنية</option><option value="الأنشطة الرياضية">الأنشطة الرياضية</option><option value="البرامج التدريبية">البرامج التدريبية</option><option value="برامج عامة على مستوى الجامعة">برامج عامة على مستوى الجامعة</option></select></label>
+<input id="activityEditKey" type="hidden" value=""/>
+<label><span>اسم النشاط</span><input id="activityName" required=""/></label>
+<label><span>التاريخ</span><input id="activityDate" required="" type="date"/></label>
+<label><span>عدد الأيام</span><input id="activityDays" min="1" required="" type="number" value="1"/></label>
+<label><span>عدد المستفيدين</span><input id="activityBeneficiaries" min="0" required="" type="number" value="0"/></label>
+<label><span>عدد اللاعبين المشاركين</span><input id="activityPlayers" min="0" required="" type="number" value="0"/></label>
+<label><span>الفئة</span><select id="activityGender" required=""><option disabled="" selected="" value="">اختر الفئة</option><option value="طلاب">طلاب</option><option value="طالبات">طالبات</option></select></label>
+<label><span>فئة الحدث</span><select id="activityEventCategory" required=""><option disabled="" selected="" value="">اختر فئة الحدث</option><option value="الأنشطة التوعوية">الأنشطة التوعوية</option><option value="الأنشطة و البرامج المجتمعية و التطوعية">الأنشطة و البرامج المجتمعية و التطوعية</option><option value="الأنشطة الثقافية">الأنشطة الثقافية</option><option value="الأنشطة العلمية">الأنشطة العلمية</option><option value="الأنشطة الفنية">الأنشطة الفنية</option><option value="الأنشطة الرياضية">الأنشطة الرياضية</option><option value="البرامج التدريبية">البرامج التدريبية</option><option value="برامج عامة على مستوى الجامعة">برامج عامة على مستوى الجامعة</option></select></label>
 <label><span>المجال الرئيسي</span><select id="activityIndicatorField" required=""></select></label>
 <label><span>المجال الفرعي</span><select id="activitySubField" required=""></select></label>
 <label><span>نوع المشاركة</span><select id="activityParticipationType" required=""><option disabled="" selected="" value="">اختر نوع المشاركة</option><option value="guest">ضيف</option><option value="host">مستضيف</option></select></label>
 <label><span>عدد الجامعات المشاركة</span><input id="activityUniversities" min="0" required="" type="number" value="0"/></label>
-<label><span>نوع اللعبة / النشاط</span><input id="activityGameType" readonly="" required=""/>
+<label><span>نوع اللعبة / النشاط</span><input id="activityGameType" required=""/>
 <label class="budget-field">
 <span>الميزانية المطلوبة للنشاط (ر.س)</span>
-<input id="activityBudget" min="0" placeholder="0" readonly="" required="" step="0.01" type="number"/>
+<input id="activityBudget" min="0" placeholder="0" required="" step="0.01" type="number"/>
 <small>تدخل ضمن الميزانية المصروفة للأنشطة المسجلة مباشرة عند اعتمادها.</small>
-</label></label><label class="hidden" id="activityGameTypeOtherWrap"><span>حدد نوع اللعبة / النشاط الآخر</span><input id="activityGameTypeOther" maxlength="80" placeholder="اكتب نوع اللعبة أو النشاط" type="text"/></label>
+</label></label>
 <label><span>رابط التوثيق</span><input id="activityDocumentationUrl" placeholder="https://..." required="" type="url"/></label>
 <label class="file-field"><span>تقرير الاتحاد</span><input accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" id="activityFederationReport" required="" type="file"/></label>
 <label class="file-field"><span>الجدول الزمني</span><input accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" id="activityScheduleFile" required="" type="file"/></label>
@@ -2084,7 +2088,7 @@
 </div>
 <script src="js/data.js?v=22.0"></script>
 <script src="js/admin.js?v=22.0"></script>
-<script src="js/app.js?v=32.1"></script>
+<script src="js/app.js?v=31.2"></script>
 <div aria-modal="true" class="modal hidden" id="finishEventModal" role="dialog">
 <div class="modal-backdrop" data-close-finish-event=""></div>
 <div class="modal-card university-confirm-modal finish-event-modern-modal"><div class="finish-event-confirm-shell">
@@ -2135,5 +2139,5 @@
 <label class="annual-budget-field"><span>الميزانية السنوية الكاملة (ر.س)</span><input id="annualBudgetInput" min="0" placeholder="مثال: 500000" step="1000" type="number"/></label>
 <div class="annual-budget-modal-actions"><button class="btn outline" data-close-annual-budget="" type="button">إلغاء</button><button class="btn primary" id="saveAnnualBudget" type="button">حفظ وتحديث الميزانية</button></div>
 </div>
-</div><div aria-modal="true" class="modal hidden" id="reportRequiredModal" role="dialog"><div class="modal-backdrop" data-close-report-required=""></div><div class="modal-card report-required-modal-card"><div class="report-required-brand"><strong>UBT</strong><span>Student Activities Platform</span></div><div class="report-required-icon">!</div><h3>يجب تسجيل تقرير الحدث أولًا</h3><p id="reportRequiredMessage">لا يمكن إنهاء الحدث قبل ربطه بتقرير في صفحة التقارير والتحليلات.</p><div class="report-required-steps"><span>1</span><p>انتقل إلى التقارير والتحليلات.</p><span>2</span><p>اختر «إضافة نشاط» وسيتم تحديد الحدث تلقائيًا حسب صلاحيتك.</p><span>3</span><p>أكمل ملفات التقرير والتوثيق ثم عد لإنهاء الحدث.</p></div><div class="modal-actions centered"><button class="btn outline" data-close-report-required="" type="button">إلغاء</button><button class="btn primary" id="goToEventReport" type="button">الانتقال إلى إضافة نشاط</button></div></div></div><div aria-modal="true" class="modal hidden" id="earlyFinishModal" role="dialog"><div class="modal-backdrop" data-close-early-finish=""></div><div class="modal-card early-finish-modal-card"><div class="early-finish-brand"><span>UBT</span><div><strong>تأكيد الإنهاء المبكر</strong><small>Student Activities Platform</small></div></div><div class="early-finish-warning">!</div><h3>هل أنت متأكد؟</h3><p id="earlyFinishDescription">يتم إنهاء هذا الحدث قبل موعده المسجل.</p><label><span id="earlyFinishReasonLabel">سبب عدم بدء الحدث</span><textarea data-word-limit="15" id="earlyFinishReason" placeholder="اكتب السبب بحد أقصى 15 كلمة" rows="4"></textarea><small><b id="earlyFinishWordCount">0</b> / 15 كلمة</small></label><div class="modal-actions centered"><button class="btn outline" data-close-early-finish="" type="button">إلغاء</button><button class="btn danger" id="confirmEarlyFinish" type="button">تأكيد إنهاء الحدث</button></div></div></div></body>
+</div></body>
 </html>
