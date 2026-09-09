@@ -6991,7 +6991,9 @@ function renderBudgetDashboard(){
   const sum=list=>list.reduce((total,row)=>total+budgetNumber(row.budget),0);
   const approvedSum=sum(approved);
   const pendingSum=sum(pending);
-  const annual=typeof v309AnnualBudget==='function'?v309AnnualBudget():0;
+  const annual=window.SAH_ANNUAL_BUDGET_STORE?.get?.()
+    ?? window.__SAH_BOOT_ANNUAL_BUDGET
+    ?? 0;
   const remaining=annual-approvedSum;
 
   const set=(id,value)=>{
@@ -7862,11 +7864,14 @@ window.SAH_ANNUAL_BUDGET_STORE=(function(){
     const chosen=choose();
     // Self-heal every read: restore all mirrors from the winning copy.
     persist(chosen.value,chosen.updatedAt||Date.now());
+    window.__SAH_BOOT_ANNUAL_BUDGET=chosen.value;
     return chosen.value;
   }
 
   function set(value){
-    return persist(value,Date.now());
+    const saved=persist(value,Date.now());
+    window.__SAH_BOOT_ANNUAL_BUDGET=saved;
+    return saved;
   }
 
   function debug(){
@@ -8704,4 +8709,12 @@ window.addEventListener('storage',event=>{
 window.addEventListener('DOMContentLoaded',()=>{
   document.documentElement.dataset.sahBuild='32.12';
   console.info('SAH build 32.12 authoritative annual budget persistence loaded');
+});
+
+
+/* SAH V32.13 — budget zero-flicker root-cause fix */
+window.addEventListener('DOMContentLoaded',()=>{
+  document.documentElement.classList.remove('sah-budget-prehydrate');
+  document.documentElement.dataset.sahBuild='32.13';
+  console.info('SAH build 32.13: renderBudgetDashboard now uses the authoritative global budget store.');
 });

@@ -6,7 +6,67 @@
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="#082b63" name="theme-color"/>
 <title>Student Activities Platform | UBT</title>
-<link href="css/style.css?v=32.12" rel="stylesheet"/>
+<script id="sah-budget-prehydrate-v3213">
+(function(){
+  try{
+    const MAIN='sah-v3212-annual-budget';
+    const BACKUP='sah-v3212-annual-budget-backup';
+    const LEGACY_STATE='sah-v3211-annual-budget-state';
+    const RAW_A='sah-v309-annual-budget';
+    const RAW_B='sah-v30-annual-budget';
+
+    function parse(raw,legacy){
+      if(raw==null||raw==='')return null;
+      try{
+        const obj=JSON.parse(raw);
+        if(obj&&typeof obj==='object'){
+          const value=Number(obj.value);
+          const updatedAt=Number(obj.updatedAt)||Date.parse(obj.updatedAt)||0;
+          if(Number.isFinite(value)&&value>=0)return {value,updatedAt,legacy:!!legacy};
+        }
+      }catch{}
+      const value=Number(raw);
+      if(Number.isFinite(value)&&value>=0)return {value,updatedAt:0,legacy:!!legacy};
+      return null;
+    }
+
+    const candidates=[
+      parse(localStorage.getItem(MAIN),false),
+      parse(localStorage.getItem(BACKUP),false),
+      parse(localStorage.getItem(LEGACY_STATE),true),
+      parse(localStorage.getItem(RAW_A),true),
+      parse(localStorage.getItem(RAW_B),true)
+    ].filter(Boolean);
+
+    let chosen={value:0,updatedAt:0};
+    const stamped=candidates.filter(x=>x.updatedAt>0).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(stamped.length)chosen=stamped[0];
+    else{
+      const positive=candidates.filter(x=>x.value>0).sort((a,b)=>b.value-a.value);
+      if(positive.length)chosen=positive[0];
+      else if(candidates.length)chosen=candidates[0];
+    }
+
+    window.__SAH_BOOT_ANNUAL_BUDGET=Math.max(0,Number(chosen.value)||0);
+
+    // Ensure every older renderer sees the same budget immediately.
+    localStorage.setItem(RAW_A,String(window.__SAH_BOOT_ANNUAL_BUDGET));
+    localStorage.setItem(RAW_B,String(window.__SAH_BOOT_ANNUAL_BUDGET));
+
+    document.documentElement.classList.add('sah-budget-prehydrate');
+  }catch(error){
+    window.__SAH_BOOT_ANNUAL_BUDGET=0;
+  }
+})();
+</script>
+<style id="sah-budget-prehydrate-style-v3213">
+html.sah-budget-prehydrate #generalAnnualBudgetRemaining,
+html.sah-budget-prehydrate #generalAnnualBudgetCaption{
+  visibility:hidden!important;
+}
+</style>
+
+<link href="css/style.css?v=32.13" rel="stylesheet"/>
 <style id="sah-mobile-critical-v201">
 @media (max-width:1100px){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
@@ -70,7 +130,7 @@
 }
 </style>
 </head>
-<body class="login-mode" data-sah-version="32.12">
+<body class="login-mode" data-sah-version="32.13">
 <section class="login-page" id="login">
 <div class="login-bg"></div>
 <div class="login-card">
@@ -360,7 +420,59 @@
 <strong id="generalRequestedBudget">0 ر.س</strong>
 <small>ميزانية الأحداث التي لم تتم الموافقة عليها بعد.</small>
 <i class="general-kpi-arrow">←</i>
-</button><div class="card general-kpi-card budget annual-budget annual-budget-centered-control" id="generalAnnualBudgetCard" role="button" tabindex="0"><span>الميزانية السنوية المتبقية</span><strong id="generalAnnualBudgetRemaining">0 ر.س</strong><small id="generalAnnualBudgetCaption">المتبقي من الميزانية السنوية بعد خصم ميزانية الأنشطة الموافق عليها.</small><button class="annual-budget-edit-mini dean-budget-control" data-dean-budget-control="1" id="openAnnualBudgetEditor" type="button"><span class="annual-budget-edit-label">تعديل الميزانية</span></button></div><button class="card general-kpi-card satisfaction" id="generalSatisfactionCard" type="button">
+</button><div class="card general-kpi-card budget annual-budget annual-budget-centered-control" id="generalAnnualBudgetCard" role="button" tabindex="0"><span>الميزانية السنوية المتبقية</span><strong id="generalAnnualBudgetRemaining">0 ر.س</strong><small id="generalAnnualBudgetCaption">المتبقي من الميزانية السنوية بعد خصم ميزانية الأنشطة الموافق عليها.</small><button class="annual-budget-edit-mini dean-budget-control" data-dean-budget-control="1" id="openAnnualBudgetEditor" type="button"><span class="annual-budget-edit-label">تعديل الميزانية</span></button></div>
+<script id="sah-budget-card-hydrate-v3213">
+(function(){
+  try{
+    const annual=Math.max(0,Number(window.__SAH_BOOT_ANNUAL_BUDGET)||0);
+    const approvedStatuses=new Set(['مقبول','معتمد','معتمد نهائيًا','تمت الموافقة','approved','accepted']);
+    const stores=['sah-v22-sports','sah-v22-club-events','sah-v22-vol','sah-v30-council-activities'];
+
+    let spent=0;
+    const seen=new Set();
+
+    stores.forEach(key=>{
+      let rows=[];
+      try{rows=JSON.parse(localStorage.getItem(key)||'[]')}catch{}
+      if(!Array.isArray(rows))return;
+
+      rows.forEach(row=>{
+        const status=String(row?.status||row?.approvalStatus||'').trim().toLowerCase();
+        if(!approvedStatuses.has(status))return;
+
+        const budget=Number(
+          row?.budget ?? row?.requestedBudget ?? row?.budgetRequested ??
+          row?.estimatedBudget ?? row?.activityBudget ?? row?.eventBudget ?? 0
+        )||0;
+        if(budget<=0)return;
+
+        const signature=String(row?.id||row?.requestId||`${key}|${row?.name||''}|${row?.date||''}|${budget}`);
+        if(seen.has(signature))return;
+        seen.add(signature);
+        spent+=budget;
+      });
+    });
+
+    const remaining=annual-spent;
+    const money=value=>`${Number(value||0).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;
+
+    const value=document.getElementById('generalAnnualBudgetRemaining');
+    const caption=document.getElementById('generalAnnualBudgetCaption');
+
+    if(value)value.textContent=money(remaining);
+    if(caption){
+      caption.textContent=remaining<0
+        ? `المعتمدة سنويًا ${money(annual)} • المصروف ${money(spent)} • العجز ${money(Math.abs(remaining))}`
+        : `المعتمدة سنويًا ${money(annual)} • المصروف ${money(spent)} • المتبقي ${money(remaining)}`;
+    }
+
+    document.documentElement.classList.remove('sah-budget-prehydrate');
+  }catch(error){
+    document.documentElement.classList.remove('sah-budget-prehydrate');
+  }
+})();
+</script>
+<button class="card general-kpi-card satisfaction" id="generalSatisfactionCard" type="button">
 <span>نسبة رضا المستفيدين</span>
 <strong id="generalSatisfactionPercent">0%</strong>
 <small id="generalSatisfactionCount">0 استبانة مكتملة</small>
@@ -2126,7 +2238,7 @@
 </div>
 <script src="js/data.js?v=22.0"></script>
 <script src="js/admin.js?v=22.0"></script>
-<script src="js/app.js?v=32.12"></script>
+<script src="js/app.js?v=32.13"></script>
 <div aria-modal="true" class="modal hidden" id="finishEventModal" role="dialog">
 <div class="modal-backdrop" data-close-finish-event=""></div>
 <div class="modal-card university-confirm-modal finish-event-modern-modal"><div class="finish-event-confirm-shell">
