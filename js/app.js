@@ -7864,3 +7864,151 @@ function refresh(){migrate();['sports','club','volunteer','council'].forEach(ren
 function bind(){document.addEventListener('click',e=>{const finish=e.target.closest('.finish-event-btn');if(finish){e.preventDefault();e.stopImmediatePropagation();requestFinish(finish.dataset.finishStore,finish.dataset.finishId);return}const go=e.target.closest('#goToEventReport');if(go){goReport();return}if(e.target.closest('[data-close-report-required]')){closeReportRequired();return}if(e.target.closest('[data-close-early-finish]')){closeEarly();return}const cf=e.target.closest('#confirmEarlyFinish');if(cf){confirmEarly();return}const normal=e.target.closest('#confirmFinishEvent');if(normal&&v32PendingFinish){e.preventDefault();e.stopImmediatePropagation();confirmNormalFinish();return}const sel=e.target.closest('[data-select-participant-event]');if(sel){v32Selected[sel.dataset.scope]=sel.dataset.selectParticipantEvent;renderIndex(sel.dataset.scope);return}const ex=e.target.closest('[data-participant-export]');if(ex){exportParticipants(ex.dataset.scope,ex.dataset.participantExport);return}const ac=e.target.closest('.v32-accept-participant');if(ac){acceptParticipant(ac.dataset.id,ac.dataset.scope);return}const ro=e.target.closest('.v32-reject-participant');if(ro){ro.closest('.participant-pending-actions')?.querySelector('.v32-reject-editor')?.classList.remove('hidden');return}const rc=e.target.closest('.v32-confirm-reject');if(rc){const ed=rc.closest('.v32-reject-editor'),reason=ed?.querySelector('input')?.value.trim();if(!reason){window.showToast?.('سبب الرفض إلزامي.');return}updateApp(rc.dataset.id,a=>{a.status='مرفوض';a.reason=reason});return}const ca=e.target.closest('.v32-cancel-accept');if(ca){ca.closest('.participant-final')?.querySelector('.v32-cancel-accept-editor')?.classList.remove('hidden');return}const cc=e.target.closest('.v32-confirm-cancel-accept');if(cc){const ed=cc.closest('.v32-cancel-accept-editor'),input=ed?.querySelector('input'),reason=input?.value.trim()||'',wc=reason.split(/\s+/).filter(Boolean).length;if(!reason){window.showToast?.('سبب إلغاء المشاركة إلزامي.');return}if(wc>15){window.showToast?.('سبب إلغاء المشاركة لا يتجاوز 15 كلمة.');return}updateApp(cc.dataset.id,a=>{a.status='تحت المراجعة';a.acceptanceCancelledReason=reason;a.acceptanceCancelledAt=new Date().toISOString()});return}const ur=e.target.closest('.v32-undo-reject');if(ur){updateApp(ur.dataset.id,a=>{a.status='تحت المراجعة';a.reason='';a.rejectionCancelledAt=new Date().toISOString()});return}},true);document.getElementById('activitySourceEvent')?.addEventListener('change',e=>autofillReport(e.target));document.getElementById('openAddActivity')?.addEventListener('click',()=>setTimeout(()=>populateReportEvents(v32PendingReport),80));document.getElementById('saveNewActivity')?.addEventListener('click',()=>setTimeout(refresh,260));document.getElementById('earlyFinishReason')?.addEventListener('input',e=>{const words=e.target.value.trim().split(/\s+/).filter(Boolean);if(words.length>15)e.target.value=words.slice(0,15).join(' ');document.getElementById('earlyFinishWordCount').textContent=e.target.value.trim()?e.target.value.trim().split(/\s+/).length:0});['sportsApplicantSearch','sportsApplicantStatus','clubApplicantSearch','clubApplicantStatus','volunteerApplicantSearch','volunteerApplicantStatus','councilApplicantSearch','councilApplicantStatus'].forEach(id=>document.getElementById(id)?.addEventListener(id.includes('Search')?'input':'change',()=>{const s=id.startsWith('sports')?'sports':id.startsWith('club')?'club':id.startsWith('volunteer')?'volunteer':'council';renderParticipants(s)}));document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!canCreateMore())blockCreateIfNeeded(e)},true)}
 window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();setTimeout(refresh,250);document.documentElement.dataset.sahBuild='32.0';console.info('SAH build 32.0 loaded')});
 })();
+
+
+/* ============================================================
+   SAH V32.1 — Authoritative annual-budget live deduction
+   ============================================================ */
+(()=>{
+  const ANNUAL_KEY='sah-v309-annual-budget';
+
+  const money=v=>{
+    const n=Number(String(v??0).replace(/[^\d.-]/g,''));
+    return Number.isFinite(n)?Math.max(0,n):0;
+  };
+
+  const annualBudget=()=>{
+    const raw=localStorage.getItem(ANNUAL_KEY);
+    if(!raw) return 0;
+    try{
+      const parsed=JSON.parse(raw);
+      return money(parsed?.amount ?? parsed?.value ?? parsed?.budget ?? parsed);
+    }catch(_){
+      return money(raw);
+    }
+  };
+
+  const requestRows=()=>{
+    try{
+      if(typeof allReq==='function') return allReq()||[];
+    }catch(_){}
+    const keys=[
+      'sah-v22-sports','sah-v22-clubs','sah-v22-club-events',
+      'sah-v22-vol','sah-v24-8-grant-applications','sah-v30-council-activities'
+    ];
+    return keys.flatMap(key=>{
+      try{
+        const rows=JSON.parse(localStorage.getItem(key)||'[]');
+        return Array.isArray(rows)?rows:[];
+      }catch(_){ return []; }
+    });
+  };
+
+  const isApproved=row=>{
+    const s=String(row?.status??row?.approvalStatus??'').trim().toLowerCase();
+    return ['مقبول','معتمد','تمت الموافقة','approved','accepted'].includes(s);
+  };
+
+  const rowBudget=row=>money(
+    row?.budget ?? row?.requestedBudget ?? row?.budgetRequested ??
+    row?.estimatedBudget ?? row?.activityBudget ?? row?.eventBudget ?? 0
+  );
+
+  const approvedSpend=()=>{
+    const seen=new Set();
+    return requestRows().reduce((sum,row)=>{
+      if(!isApproved(row)) return sum;
+      const id=String(row?.id ?? row?.requestId ?? row?.uid ?? '');
+      const signature=id || JSON.stringify([
+        row?.name,row?.title,row?.date,rowBudget(row),row?.kind,row?.store
+      ]);
+      if(seen.has(signature)) return sum;
+      seen.add(signature);
+      return sum+rowBudget(row);
+    },0);
+  };
+
+  const requestedPending=()=>{
+    const seen=new Set();
+    return requestRows().reduce((sum,row)=>{
+      if(isApproved(row)) return sum;
+      const s=String(row?.status??row?.approvalStatus??'').trim().toLowerCase();
+      if(['مرفوض','rejected'].includes(s)) return sum;
+      const id=String(row?.id ?? row?.requestId ?? row?.uid ?? '');
+      const signature=id || JSON.stringify([
+        row?.name,row?.title,row?.date,rowBudget(row),row?.kind,row?.store
+      ]);
+      if(seen.has(signature)) return sum;
+      seen.add(signature);
+      return sum+rowBudget(row);
+    },0);
+  };
+
+  const formatSAR=n=>{
+    try{
+      return new Intl.NumberFormat(document.documentElement.lang==='en'?'en-US':'ar-SA',
+        {maximumFractionDigits:2}).format(n)+' ر.س';
+    }catch(_){ return n.toFixed(2)+' ر.س'; }
+  };
+
+  window.SAHBudgetLedger={
+    annualBudget,
+    approvedSpend,
+    remaining:()=>Math.max(0,annualBudget()-approvedSpend()),
+    requestedPending
+  };
+
+  const paint=()=>{
+    const annual=annualBudget();
+    const spent=approvedSpend();
+    const remaining=Math.max(0,annual-spent);
+
+    const spentEl=document.getElementById('generalApprovedBudget');
+    const requestedEl=document.getElementById('generalRequestedBudget');
+    const remainingEl=document.getElementById('generalAnnualBudgetRemaining');
+    const caption=document.getElementById('generalAnnualBudgetCaption');
+
+    if(spentEl) spentEl.textContent=formatSAR(spent);
+    if(requestedEl) requestedEl.textContent=formatSAR(requestedPending());
+    if(remainingEl) remainingEl.textContent=formatSAR(remaining);
+    if(caption){
+      caption.textContent=document.documentElement.lang==='en'
+        ? `Annual budget ${formatSAR(annual)} − approved activities ${formatSAR(spent)}`
+        : `الميزانية السنوية ${formatSAR(annual)} − الفعاليات المعتمدة ${formatSAR(spent)}`;
+    }
+
+    const card=document.getElementById('generalAnnualBudgetCard');
+    if(card){
+      const pct=annual>0?Math.max(0,Math.min(100,(remaining/annual)*100)):0;
+      card.style.setProperty('--ring-p',pct.toFixed(2));
+      card.dataset.annualBudget=String(annual);
+      card.dataset.spentBudget=String(spent);
+      card.dataset.remainingBudget=String(remaining);
+    }
+  };
+
+  // Recalculate after every storage mutation and after approval UI actions.
+  const originalSet=Storage.prototype.setItem;
+  if(!Storage.prototype.__sahBudgetV321){
+    Storage.prototype.setItem=function(key,value){
+      originalSet.call(this,key,value);
+      if(String(key).startsWith('sah-')) queueMicrotask(paint);
+    };
+    Storage.prototype.__sahBudgetV321=true;
+  }
+
+  document.addEventListener('click',()=>setTimeout(paint,0),true);
+  window.addEventListener('storage',paint);
+  window.addEventListener('DOMContentLoaded',()=>{
+    paint();
+    setTimeout(paint,250);
+    setTimeout(paint,900);
+  });
+
+  // Dynamic pages can re-render the KPI nodes.
+  const observer=new MutationObserver(()=>paint());
+  window.addEventListener('DOMContentLoaded',()=>{
+    const root=document.getElementById('page-general-indicator');
+    if(root) observer.observe(root,{childList:true,subtree:true});
+  });
+})();

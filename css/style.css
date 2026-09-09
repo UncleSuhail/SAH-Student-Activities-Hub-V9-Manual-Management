@@ -13568,3 +13568,9 @@ html[lang="ar"] .student-quick-link-card{
 @media(max-width:700px){.participant-index-heading{align-items:flex-start;flex-direction:column}.participant-export-actions{width:100%}.participant-export-actions button{flex:1}.participant-event-index{grid-template-columns:1fr}.report-required-modal-card,.early-finish-modal-card{padding:17px!important}}
 
 .activity-form select.auto-event-field{pointer-events:none!important;background:#f2f5f9!important;color:#42536a!important}
+
+
+/* SAH V32.1 — remaining annual budget is always the live balance */
+#generalAnnualBudgetCard[data-annual-budget]{
+  transition:box-shadow .2s ease,transform .2s ease;
+}
