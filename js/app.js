@@ -7752,7 +7752,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 (function(){
 'use strict';
 
-const V309_ANNUAL_BUDGET_KEY='sah-v30-annual-budget';
+const V309_ANNUAL_BUDGET_KEY='sah-v309-annual-budget';
 
 const V309_ROLE_ACCESS={
   system:new Set(['general-indicator','sports','sports-request','indicator','scholarships','athletes','reports','calendar','agreement','student','activities','volunteer','clubs','approvals','student-council','admin','requests']),
@@ -7831,8 +7831,17 @@ window.route=function(pageId){
   v309PreviousRoute?.(pageId);
 };
 
-function v309AnnualBudget(){return Math.max(0,Number(localStorage.getItem(V309_ANNUAL_BUDGET_KEY))||0);}
-function v309SetAnnualBudget(value){localStorage.setItem(V309_ANNUAL_BUDGET_KEY,String(Math.max(0,Number(value)||0)));}
+function v309AnnualBudget(){
+  const primary=Number(localStorage.getItem(V309_ANNUAL_BUDGET_KEY));
+  const legacy=Number(localStorage.getItem('sah-v30-annual-budget'));
+  const value=Number.isFinite(primary)&&primary>=0?primary:(Number.isFinite(legacy)&&legacy>=0?legacy:0);
+  return Math.max(0,value||0);
+}
+function v309SetAnnualBudget(value){
+  const safe=Math.max(0,Number(value)||0);
+  localStorage.setItem(V309_ANNUAL_BUDGET_KEY,String(safe));
+  localStorage.setItem('sah-v30-annual-budget',String(safe));
+}
 
 function v309Money(value){return `${Number(value||0).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;}
 
@@ -7878,7 +7887,7 @@ function v309RenderAnnualBudget(){
   if(input&&!input.matches(':focus'))input.value=total||'';
 
   const edit=document.getElementById('openAnnualBudgetEditor');
-  if(edit)edit.hidden=v309Role()!=='dean';
+  if(edit)edit.dataset.budgetPermissionManaged='v327';
 }
 
 function v309OpenAnnualBudget(){
@@ -7931,7 +7940,7 @@ function v309SaveCouncilApplicant(id,status,reason=''){
 function v309Bind(){
   document.addEventListener('click',e=>{
     const back=e.target.closest('[data-role-home-back]');if(back){v309RouteHome();return;}
-    const edit=e.target.closest('#openAnnualBudgetEditor');if(edit){e.preventDefault();e.stopImmediatePropagation();if(v309Role()!=='dean'){window.showToast?.('تعديل الميزانية متاح لعميد شؤون الطلاب فقط.');return;}v309OpenAnnualBudget();return;}
+    const edit=e.target.closest('#openAnnualBudgetEditor');if(edit){return;}
     if(e.target.closest('[data-close-annual-budget]')){v309CloseAnnualBudget();return;}
     const budgetExport=e.target.closest('[data-budget-export]');if(budgetExport){e.preventDefault();exportBudgetLedger(budgetExport.dataset.budgetExport);return;}
     const annualCard=e.target.closest('#generalAnnualBudgetCard');if(annualCard&&!e.target.closest('#openAnnualBudgetEditor')){e.preventDefault();openBudgetDetails('all');return;}
@@ -7939,7 +7948,7 @@ function v309Bind(){
     const rejectOpen=e.target.closest('.council-participant-reject-open');if(rejectOpen){rejectOpen.closest('.council-participant-actions')?.querySelector('.council-participant-reject-editor')?.classList.remove('hidden');return;}
     const reject=e.target.closest('.council-participant-reject-confirm');if(reject){const editor=reject.closest('.council-participant-reject-editor');const reason=editor?.querySelector('input')?.value.trim();if(!reason){window.showToast?.('سبب الرفض إلزامي.');return;}v309SaveCouncilApplicant(reject.dataset.id,'مرفوض',reason);return;}
   },true);
-  document.getElementById('saveAnnualBudget')?.addEventListener('click',()=>{if(v309Role()!=='dean')return;const value=Number(document.getElementById('annualBudgetInput')?.value);if(!Number.isFinite(value)||value<0){window.showToast?.('أدخل ميزانية سنوية صحيحة.');return;}v309SetAnnualBudget(value);renderBudgetDashboard?.();v309RenderAnnualBudget();v309PatchBudgetButtons?.();v309CloseAnnualBudget();window.showToast?.('تم تحديث الميزانية السنوية واحتساب المصروف والمتبقي مباشرة.');});
+  /* V32.7 owns #saveAnnualBudget click handling. */
   document.getElementById('councilApplicantSearch')?.addEventListener('input',v309RenderCouncilApplicants);
   document.getElementById('councilApplicantStatus')?.addEventListener('change',v309RenderCouncilApplicants);
   document.getElementById('councilViewRole')?.addEventListener('change',v309RenderCouncilApplicants);
@@ -8184,107 +8193,223 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
 
 
 /* ==========================================================
-   SAH V32.6 — definitive Dean annual-budget editor controller
+   SAH V32.7 — standalone Dean Annual Budget modal controller
    ========================================================== */
-(()=>{
+(function(){
   'use strict';
 
-  const KEY='sah-v30-annual-budget';
+  const PRIMARY_KEY='sah-v309-annual-budget';
+  const LEGACY_KEY='sah-v30-annual-budget';
 
-  function activeRole(){
-    return document.getElementById('activeRole')?.value ||
-           document.getElementById('mobileActiveRole')?.value ||
+  function selectedRole(){
+    const desktop=document.getElementById('activeRole');
+    const mobile=document.getElementById('mobileActiveRole');
+
+    // Prefer the selector that is actually visible on screen.
+    const desktopVisible=desktop && desktop.offsetParent!==null;
+    const mobileVisible=mobile && mobile.offsetParent!==null;
+
+    if(desktopVisible && desktop.value)return desktop.value;
+    if(mobileVisible && mobile.value)return mobile.value;
+
+    return desktop?.value ||
+           mobile?.value ||
            document.body?.dataset?.activeRole ||
            localStorage.getItem('sah-v15-role') ||
            localStorage.getItem('sah-v22-role') ||
-           'system';
+           '';
   }
 
-  function isDean(){
-    return activeRole()==='dean';
+  function deanByIdentity(){
+    const role=selectedRole();
+    if(role==='dean')return true;
+
+    // Defensive fallback for legacy builds where the role selector and user
+    // chip were occasionally out of sync.
+    const roleText=String(document.getElementById('activeUserRole')?.textContent||'').trim();
+    const mobileRoleText=String(document.getElementById('mobileUserRole')?.textContent||'').trim();
+    return roleText==='عميد شؤون الطلاب' || mobileRoleText==='عميد شؤون الطلاب';
   }
 
-  function annual(){
-    const n=Number(localStorage.getItem(KEY));
-    return Number.isFinite(n)&&n>=0?n:0;
+  function numberFrom(value){
+    if(typeof value==='number')return Number.isFinite(value)?value:0;
+    const n=Number(String(value??'').replace(/,/g,'').replace(/[^\d.-]/g,''));
+    return Number.isFinite(n)?n:0;
+  }
+
+  function annualBudget(){
+    const primary=numberFrom(localStorage.getItem(PRIMARY_KEY));
+    const legacy=numberFrom(localStorage.getItem(LEGACY_KEY));
+    return primary>0?primary:(legacy>0?legacy:0);
+  }
+
+  function setAnnualBudget(value){
+    const safe=Math.max(0,numberFrom(value));
+    localStorage.setItem(PRIMARY_KEY,String(safe));
+    localStorage.setItem(LEGACY_KEY,String(safe));
+    return safe;
+  }
+
+  function approvedStatus(row){
+    const status=String(row?.status||row?.approvalStatus||'').trim().toLowerCase();
+    return ['مقبول','معتمد','معتمد نهائيًا','تمت الموافقة','approved','accepted'].includes(status);
+  }
+
+  function pendingStatus(row){
+    const status=String(row?.status||row?.approvalStatus||'تحت المراجعة').trim().toLowerCase();
+    return !approvedStatus(row) && !['مرفوض','مرفوض من العمادة','rejected'].includes(status);
+  }
+
+  function rowBudget(row){
+    return Math.max(0,numberFrom(
+      row?.budget ?? row?.requestedBudget ?? row?.budgetRequested ??
+      row?.estimatedBudget ?? row?.activityBudget ?? row?.eventBudget ?? 0
+    ));
+  }
+
+  function readArray(key){
+    try{
+      const value=JSON.parse(localStorage.getItem(key)||'[]');
+      return Array.isArray(value)?value:[];
+    }catch{
+      return [];
+    }
+  }
+
+  function budgetRows(){
+    const keys=[
+      'sah-v22-sports',
+      'sah-v22-club-events',
+      'sah-v22-vol',
+      'sah-v30-council-activities'
+    ];
+    const seen=new Set();
+    const rows=[];
+
+    keys.forEach(key=>{
+      readArray(key).forEach(row=>{
+        const budget=rowBudget(row);
+        if(budget<=0)return;
+
+        const signature=String(
+          row?.id || row?.requestId ||
+          `${key}|${row?.name||row?.title||''}|${row?.date||''}|${budget}`
+        );
+        if(seen.has(signature))return;
+        seen.add(signature);
+        rows.push({...row,budget});
+      });
+    });
+    return rows;
+  }
+
+  function totals(){
+    const rows=budgetRows();
+    const spent=rows.filter(approvedStatus).reduce((s,row)=>s+rowBudget(row),0);
+    const requested=rows.filter(pendingStatus).reduce((s,row)=>s+rowBudget(row),0);
+    const annual=annualBudget();
+    return {annual,spent,requested,remaining:annual-spent};
   }
 
   function money(value){
     return `${Number(value||0).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;
   }
 
-  function spent(){
-    try{
-      if(typeof allBudgetRows==='function'){
-        return allBudgetRows()
-          .filter(row=>{
-            const state=row.__budgetStatus ||
-              (['مقبول','معتمد','معتمد نهائيًا','تمت الموافقة'].includes(String(row.status||''))?'approved':'');
-            return state==='approved';
-          })
-          .reduce((sum,row)=>sum+(Number(row.budget)||0),0);
-      }
-    }catch(error){
-      console.error('Budget spent calculation failed',error);
-    }
-    return 0;
+  function setText(id,value){
+    const el=document.getElementById(id);
+    if(el)el.textContent=value;
   }
 
-  function syncEditorPermission(){
+  function refreshBudgetUI(){
+    const t=totals();
+
+    setText('generalApprovedBudget',money(t.spent));
+    setText('generalRequestedBudget',money(t.requested));
+    setText('generalAnnualBudgetRemaining',money(t.remaining));
+
+    const caption=document.getElementById('generalAnnualBudgetCaption');
+    if(caption){
+      caption.textContent=t.remaining<0
+        ? `السنوية ${money(t.annual)} • المصروف ${money(t.spent)} • العجز ${money(Math.abs(t.remaining))}`
+        : `السنوية ${money(t.annual)} • المصروف ${money(t.spent)} • المتبقي ${money(t.remaining)}`;
+    }
+
+    setText('annualBudgetCurrentValue',money(t.annual));
+    setText(
+      'annualBudgetSpentSummary',
+      t.remaining<0
+        ? `المصروف المعتمد: ${money(t.spent)} — العجز: ${money(Math.abs(t.remaining))}`
+        : `المصروف المعتمد: ${money(t.spent)} — المتبقي: ${money(t.remaining)}`
+    );
+
+    const input=document.getElementById('annualBudgetInput');
+    if(input && document.activeElement!==input)input.value=t.annual||'';
+
+    const card=document.getElementById('generalAnnualBudgetCard');
+    if(card){
+      const percent=t.annual>0?Math.max(0,Math.min(100,(t.remaining/t.annual)*100)):0;
+      card.style.setProperty('--ring-p',String(percent));
+    }
+
+    // Keep details summary synced too.
+    setText('budgetDetailsAnnual',money(t.annual));
+    setText('budgetDetailsSpent',money(t.spent));
+    setText('budgetDetailsRequested',money(t.requested));
+    setText('budgetDetailsRemaining',money(t.remaining));
+  }
+
+  function applyPermission(){
     const button=document.getElementById('openAnnualBudgetEditor');
     if(!button)return;
 
-    const allowed=isDean();
+    const allowed=deanByIdentity();
     button.hidden=!allowed;
     button.disabled=!allowed;
-    button.setAttribute('aria-hidden',allowed?'false':'true');
     button.style.display=allowed?'inline-flex':'none';
+    button.setAttribute('aria-disabled',allowed?'false':'true');
+    button.title=allowed?'تحديد أو تعديل الميزانية السنوية':'متاح لعميد شؤون الطلاب فقط';
   }
 
-  function syncModalNumbers(){
-    const total=annual();
-    const used=spent();
-    const remaining=total-used;
-
-    const current=document.getElementById('annualBudgetCurrentValue');
-    const summary=document.getElementById('annualBudgetSpentSummary');
-    const input=document.getElementById('annualBudgetInput');
-
-    if(current)current.textContent=money(total);
-    if(summary){
-      summary.textContent=remaining<0
-        ? `المصروف المعتمد: ${money(used)} — العجز: ${money(Math.abs(remaining))}`
-        : `المصروف المعتمد: ${money(used)} — المتبقي: ${money(remaining)}`;
-    }
-    if(input&&!input.matches(':focus'))input.value=total||'';
-  }
-
-  function openEditor(){
-    if(!isDean()){
+  function openModal(){
+    if(!deanByIdentity()){
       window.showToast?.('تعديل الميزانية السنوية متاح لعميد شؤون الطلاب فقط.');
+      applyPermission();
       return;
     }
 
-    syncModalNumbers();
+    refreshBudgetUI();
 
     const modal=document.getElementById('annualBudgetModal');
-    if(!modal)return;
+    if(!modal){
+      window.showToast?.('تعذر العثور على نافذة تعديل الميزانية.');
+      return;
+    }
 
     modal.hidden=false;
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden','false');
-    modal.style.display='flex';
-    modal.style.visibility='visible';
-    modal.style.opacity='1';
-    modal.style.pointerEvents='auto';
 
-    requestAnimationFrame(()=>{
-      document.getElementById('annualBudgetInput')?.focus();
-      document.getElementById('annualBudgetInput')?.select();
-    });
+    // Explicit inline state defeats any stale .hidden/display rule.
+    modal.style.setProperty('display','flex','important');
+    modal.style.setProperty('visibility','visible','important');
+    modal.style.setProperty('opacity','1','important');
+    modal.style.setProperty('pointer-events','auto','important');
+
+    const card=modal.querySelector('.annual-budget-modal-card');
+    if(card){
+      card.style.setProperty('display','block','important');
+      card.style.setProperty('visibility','visible','important');
+      card.style.setProperty('pointer-events','auto','important');
+    }
+
+    setTimeout(()=>{
+      const input=document.getElementById('annualBudgetInput');
+      input?.focus();
+      input?.select();
+    },30);
   }
 
-  function closeEditor(){
+  function closeModal(){
     const modal=document.getElementById('annualBudgetModal');
     if(!modal)return;
 
@@ -8296,99 +8421,105 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     modal.style.removeProperty('pointer-events');
   }
 
-  function saveEditor(){
-    if(!isDean()){
-      window.showToast?.('تعديل الميزانية السنوية متاح لعميد شؤون الطلاب فقط.');
+  function saveModal(){
+    if(!deanByIdentity()){
+      window.showToast?.('حفظ الميزانية متاح لعميد شؤون الطلاب فقط.');
       return;
     }
 
     const input=document.getElementById('annualBudgetInput');
-    const value=Number(input?.value);
+    const raw=numberFrom(input?.value);
 
-    if(!Number.isFinite(value)||value<0){
-      window.showToast?.('أدخل ميزانية سنوية صحيحة.');
+    if(!Number.isFinite(raw) || raw<0){
+      window.showToast?.('أدخل قيمة صحيحة للميزانية السنوية.');
       input?.focus();
       return;
     }
 
-    localStorage.setItem(KEY,String(value));
+    setAnnualBudget(raw);
+    refreshBudgetUI();
+    closeModal();
 
-    try{ renderBudgetDashboard?.(); }catch(error){ console.error(error); }
-    try{ v309RenderAnnualBudget?.(); }catch(error){ console.error(error); }
-    try{ v309PatchBudgetButtons?.(); }catch(error){ console.error(error); }
+    // Refresh public hooks only when they actually exist.
+    if(typeof window.renderAll==='function'){
+      try{window.renderAll();}catch(error){console.error(error);}
+    }
+    if(typeof window.v309Refresh==='function'){
+      try{window.v309Refresh();}catch(error){console.error(error);}
+    }
 
-    syncModalNumbers();
-    closeEditor();
-    window.showToast?.('تم حفظ الميزانية السنوية وتحديث المصروف والمتبقي بنجاح.');
+    setTimeout(()=>{
+      applyPermission();
+      refreshBudgetUI();
+    },50);
+
+    window.showToast?.('تم حفظ الميزانية السنوية وتحديث الرصيد المتبقي.');
   }
 
-  function replaceAndBind(id,handler){
-    const old=document.getElementById(id);
-    if(!old)return null;
-
-    const fresh=old.cloneNode(true);
-    old.replaceWith(fresh);
-
-    fresh.addEventListener('click',event=>{
+  function handleClick(event){
+    const edit=event.target.closest?.('#openAnnualBudgetEditor');
+    if(edit){
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      handler();
-    },true);
+      openModal();
+      return;
+    }
 
-    return fresh;
+    const save=event.target.closest?.('#saveAnnualBudget');
+    if(save){
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      saveModal();
+      return;
+    }
+
+    const close=event.target.closest?.('[data-close-annual-budget]');
+    if(close){
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      closeModal();
+    }
   }
 
-  function bindController(){
-    const edit=replaceAndBind('openAnnualBudgetEditor',openEditor);
-    if(edit)edit.dataset.deanBudgetControl='1';
-
-    replaceAndBind('saveAnnualBudget',saveEditor);
-
-    document.querySelectorAll('[data-close-annual-budget]').forEach(old=>{
-      const fresh=old.cloneNode(true);
-      old.replaceWith(fresh);
-      fresh.addEventListener('click',event=>{
-        event.preventDefault();
-        event.stopPropagation();
-        closeEditor();
-      },true);
-    });
-
-    document.getElementById('annualBudgetModal')?.addEventListener('click',event=>{
-      if(event.target?.matches('.modal-backdrop'))closeEditor();
-    });
+  function initialize(){
+    document.addEventListener('click',handleClick,true);
 
     ['activeRole','mobileActiveRole'].forEach(id=>{
       document.getElementById(id)?.addEventListener('change',()=>{
         setTimeout(()=>{
-          syncEditorPermission();
-          syncModalNumbers();
-        },0);
+          applyPermission();
+          refreshBudgetUI();
+        },30);
       });
     });
 
-    syncEditorPermission();
-    syncModalNumbers();
+    applyPermission();
+    refreshBudgetUI();
 
-    // Keep the role-restricted button correct after platform re-renders.
-    const card=document.getElementById('generalAnnualBudgetCard');
-    if(card){
-      new MutationObserver(syncEditorPermission)
-        .observe(card,{childList:true,subtree:true,attributes:true});
-    }
+    // A small interval keeps permission synchronized with legacy role rendering,
+    // without observing/changing the same attributes recursively.
+    setInterval(()=>{
+      applyPermission();
+    },1500);
+
+    document.documentElement.dataset.sahBuild='32.7';
+    console.info('SAH build 32.7 standalone Dean budget modal loaded');
   }
 
   window.SAH_DEAN_BUDGET={
-    open:openEditor,
-    close:closeEditor,
-    save:saveEditor,
-    sync:syncEditorPermission
+    open:openModal,
+    close:closeModal,
+    save:saveModal,
+    refresh:refreshBudgetUI,
+    isDean:deanByIdentity
   };
 
-  window.addEventListener('DOMContentLoaded',()=>{
-    setTimeout(bindController,350);
-    document.documentElement.dataset.sahBuild='32.6';
-    console.info('SAH build 32.6 Dean budget editor controller loaded');
-  });
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initialize,{once:true});
+  }else{
+    initialize();
+  }
 })();
