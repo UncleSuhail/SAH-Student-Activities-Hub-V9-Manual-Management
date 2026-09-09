@@ -7745,6 +7745,137 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 
+
+/* ==========================================================
+   SAH V32.12 — authoritative annual budget persistence
+   ========================================================== */
+window.SAH_ANNUAL_BUDGET_STORE=(function(){
+  'use strict';
+
+  const MAIN='sah-v3212-annual-budget';
+  const BACKUP='sah-v3212-annual-budget-backup';
+  const COOKIE='sah_annual_budget_v3212';
+  const LEGACY=['sah-v3211-annual-budget-state','sah-v309-annual-budget','sah-v30-annual-budget'];
+
+  function safeNumber(value){
+    const n=Number(value);
+    return Number.isFinite(n)&&n>=0?n:null;
+  }
+
+  function parseState(raw){
+    if(raw==null||raw==='')return null;
+    try{
+      const obj=JSON.parse(raw);
+      if(obj && typeof obj==='object'){
+        const value=safeNumber(obj.value);
+        const updatedAt=Number(obj.updatedAt)||Date.parse(obj.updatedAt)||0;
+        if(value!==null)return {value,updatedAt};
+      }
+    }catch{}
+    const value=safeNumber(raw);
+    return value===null?null:{value,updatedAt:0};
+  }
+
+  function readCookie(){
+    try{
+      const prefix=COOKIE+'=';
+      const item=document.cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith(prefix));
+      if(!item)return null;
+      return parseState(decodeURIComponent(item.slice(prefix.length)));
+    }catch{return null}
+  }
+
+  function writeCookie(state){
+    try{
+      const payload=encodeURIComponent(JSON.stringify(state));
+      document.cookie=`${COOKIE}=${payload}; Max-Age=315360000; Path=/; SameSite=Lax`;
+    }catch{}
+  }
+
+  function readCandidates(){
+    const list=[];
+    [MAIN,BACKUP].forEach(key=>{
+      try{
+        const state=parseState(localStorage.getItem(key));
+        if(state)list.push({...state,source:key});
+      }catch{}
+    });
+
+    const cookie=readCookie();
+    if(cookie)list.push({...cookie,source:'cookie'});
+
+    LEGACY.forEach(key=>{
+      try{
+        const state=parseState(localStorage.getItem(key));
+        if(state)list.push({...state,source:key,legacy:true});
+      }catch{}
+    });
+
+    return list;
+  }
+
+  function choose(){
+    const candidates=readCandidates();
+    if(!candidates.length)return {value:0,updatedAt:0,source:'default'};
+
+    // Timestamped modern copies always take priority over untimestamped legacy values.
+    const modern=candidates.filter(x=>!x.legacy && x.updatedAt>0);
+    if(modern.length){
+      modern.sort((a,b)=>b.updatedAt-a.updatedAt);
+      return modern[0];
+    }
+
+    // A timestamped V32.11 state is also trusted over raw legacy keys.
+    const timestampedLegacy=candidates.filter(x=>x.updatedAt>0);
+    if(timestampedLegacy.length){
+      timestampedLegacy.sort((a,b)=>b.updatedAt-a.updatedAt);
+      return timestampedLegacy[0];
+    }
+
+    // Migration fallback: preserve the largest existing positive value.
+    const positives=candidates.filter(x=>x.value>0);
+    if(positives.length){
+      positives.sort((a,b)=>b.value-a.value);
+      return positives[0];
+    }
+
+    return candidates[0];
+  }
+
+  function persist(value,updatedAt=Date.now()){
+    const safe=Math.max(0,Number(value)||0);
+    const state={value:safe,updatedAt:Number(updatedAt)||Date.now(),version:'32.12'};
+
+    try{localStorage.setItem(MAIN,JSON.stringify(state));}catch{}
+    try{localStorage.setItem(BACKUP,JSON.stringify(state));}catch{}
+    writeCookie(state);
+
+    // Compatibility only; these are mirrors, never authoritative.
+    try{localStorage.setItem('sah-v3211-annual-budget-state',JSON.stringify(state));}catch{}
+    try{localStorage.setItem('sah-v309-annual-budget',String(safe));}catch{}
+    try{localStorage.setItem('sah-v30-annual-budget',String(safe));}catch{}
+
+    return safe;
+  }
+
+  function get(){
+    const chosen=choose();
+    // Self-heal every read: restore all mirrors from the winning copy.
+    persist(chosen.value,chosen.updatedAt||Date.now());
+    return chosen.value;
+  }
+
+  function set(value){
+    return persist(value,Date.now());
+  }
+
+  function debug(){
+    return {chosen:choose(),candidates:readCandidates()};
+  }
+
+  return {get,set,debug};
+})();
+
 /* ==========================================================
    SAH V30.9 — strict role access, role landing pages, budgets,
    council participant review, back buttons and clearer sections
@@ -7831,49 +7962,11 @@ window.route=function(pageId){
   v309PreviousRoute?.(pageId);
 };
 
-const V3211_ANNUAL_BUDGET_STATE_KEY='sah-v3211-annual-budget-state';
-
-function v3211ReadAnnualBudget(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(V3211_ANNUAL_BUDGET_STATE_KEY)||'null');
-    if(saved && Number.isFinite(Number(saved.value)) && Number(saved.value)>=0){
-      return Math.max(0,Number(saved.value));
-    }
-  }catch{}
-
-  const candidates=[
-    localStorage.getItem(V309_ANNUAL_BUDGET_KEY),
-    localStorage.getItem('sah-v30-annual-budget')
-  ]
-    .filter(value=>value!==null && value!=='')
-    .map(value=>Number(value))
-    .filter(value=>Number.isFinite(value) && value>=0);
-
-  const recovered=candidates.length?Math.max(...candidates):0;
-
-  // One-time migration to a canonical state object prevents later legacy
-  // renderers from restoring a stale zero.
-  localStorage.setItem(
-    V3211_ANNUAL_BUDGET_STATE_KEY,
-    JSON.stringify({value:recovered,updatedAt:new Date().toISOString(),migrated:true})
-  );
-
-  return recovered;
-}
-
 function v309AnnualBudget(){
-  return v3211ReadAnnualBudget();
+  return window.SAH_ANNUAL_BUDGET_STORE?.get?.() ?? 0;
 }
-
 function v309SetAnnualBudget(value){
-  const safe=Math.max(0,Number(value)||0);
-  const state={value:safe,updatedAt:new Date().toISOString(),source:'dean'};
-
-  localStorage.setItem(V3211_ANNUAL_BUDGET_STATE_KEY,JSON.stringify(state));
-  localStorage.setItem(V309_ANNUAL_BUDGET_KEY,String(safe));
-  localStorage.setItem('sah-v30-annual-budget',String(safe));
-
-  return safe;
+  return window.SAH_ANNUAL_BUDGET_STORE?.set?.(value) ?? Math.max(0,Number(value)||0);
 }
 
 function v309Money(value){return `${Number(value||0).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;}
@@ -8241,9 +8334,6 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
 (function(){
   'use strict';
 
-  const STATE_KEY='sah-v3211-annual-budget-state';
-  const PRIMARY_KEY='sah-v309-annual-budget';
-  const LEGACY_KEY='sah-v30-annual-budget';
 
   function selectedRole(){
     const desktop=document.getElementById('activeRole');
@@ -8282,40 +8372,11 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
   }
 
   function annualBudget(){
-    try{
-      const state=JSON.parse(localStorage.getItem(STATE_KEY)||'null');
-      if(state && Number.isFinite(Number(state.value)) && Number(state.value)>=0){
-        return Math.max(0,Number(state.value));
-      }
-    }catch{}
-
-    const values=[
-      localStorage.getItem(PRIMARY_KEY),
-      localStorage.getItem(LEGACY_KEY)
-    ]
-      .filter(value=>value!==null && value!=='')
-      .map(numberFrom)
-      .filter(value=>Number.isFinite(value) && value>=0);
-
-    const recovered=values.length?Math.max(...values):0;
-
-    localStorage.setItem(
-      STATE_KEY,
-      JSON.stringify({value:recovered,updatedAt:new Date().toISOString(),migrated:true})
-    );
-
-    return recovered;
+    return window.SAH_ANNUAL_BUDGET_STORE?.get?.() ?? 0;
   }
 
   function setAnnualBudget(value){
-    const safe=Math.max(0,numberFrom(value));
-    const state={value:safe,updatedAt:new Date().toISOString(),source:'dean'};
-
-    localStorage.setItem(STATE_KEY,JSON.stringify(state));
-    localStorage.setItem(PRIMARY_KEY,String(safe));
-    localStorage.setItem(LEGACY_KEY,String(safe));
-
-    return safe;
+    return window.SAH_ANNUAL_BUDGET_STORE?.set?.(numberFrom(value)) ?? Math.max(0,numberFrom(value));
   }
 
   function approvedStatus(row){
@@ -8390,9 +8451,6 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
 
   function refreshBudgetUI(){
     const canonical=annualBudget();
-    localStorage.setItem(PRIMARY_KEY,String(canonical));
-    localStorage.setItem(LEGACY_KEY,String(canonical));
-
     const t=totals();
 
     setText('generalApprovedBudget',money(t.spent));
@@ -8402,8 +8460,8 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     const caption=document.getElementById('generalAnnualBudgetCaption');
     if(caption){
       caption.textContent=t.remaining<0
-        ? `السنوية ${money(t.annual)} • المصروف ${money(t.spent)} • العجز ${money(Math.abs(t.remaining))}`
-        : `السنوية ${money(t.annual)} • المصروف ${money(t.spent)} • المتبقي ${money(t.remaining)}`;
+        ? `المعتمدة سنويًا ${money(t.annual)} • المصروف ${money(t.spent)} • العجز ${money(Math.abs(t.remaining))}`
+        : `المعتمدة سنويًا ${money(t.annual)} • المصروف ${money(t.spent)} • المتبقي ${money(t.remaining)}`;
     }
 
     setText('annualBudgetCurrentValue',money(t.annual));
@@ -8620,4 +8678,30 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
   document.documentElement.dataset.sahBuild='32.11';
   console.info('SAH build 32.11 persistent budget + true centered button loaded');
+});
+
+
+/* SAH V32.12 — budget persistence self-heal on reload/navigation */
+window.addEventListener('pageshow',()=>{
+  try{
+    window.SAH_ANNUAL_BUDGET_STORE?.get?.();
+    window.SAH_DEAN_BUDGET?.refresh?.();
+  }catch(error){
+    console.error('SAH V32.12 budget pageshow recovery failed',error);
+  }
+});
+window.addEventListener('storage',event=>{
+  if([
+    'sah-v3212-annual-budget',
+    'sah-v3212-annual-budget-backup',
+    'sah-v3211-annual-budget-state',
+    'sah-v309-annual-budget',
+    'sah-v30-annual-budget'
+  ].includes(event.key)){
+    try{window.SAH_DEAN_BUDGET?.refresh?.();}catch{}
+  }
+});
+window.addEventListener('DOMContentLoaded',()=>{
+  document.documentElement.dataset.sahBuild='32.12';
+  console.info('SAH build 32.12 authoritative annual budget persistence loaded');
 });
