@@ -7831,16 +7831,49 @@ window.route=function(pageId){
   v309PreviousRoute?.(pageId);
 };
 
-function v309AnnualBudget(){
-  const primary=Number(localStorage.getItem(V309_ANNUAL_BUDGET_KEY));
-  const legacy=Number(localStorage.getItem('sah-v30-annual-budget'));
-  const value=Number.isFinite(primary)&&primary>=0?primary:(Number.isFinite(legacy)&&legacy>=0?legacy:0);
-  return Math.max(0,value||0);
+const V3211_ANNUAL_BUDGET_STATE_KEY='sah-v3211-annual-budget-state';
+
+function v3211ReadAnnualBudget(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(V3211_ANNUAL_BUDGET_STATE_KEY)||'null');
+    if(saved && Number.isFinite(Number(saved.value)) && Number(saved.value)>=0){
+      return Math.max(0,Number(saved.value));
+    }
+  }catch{}
+
+  const candidates=[
+    localStorage.getItem(V309_ANNUAL_BUDGET_KEY),
+    localStorage.getItem('sah-v30-annual-budget')
+  ]
+    .filter(value=>value!==null && value!=='')
+    .map(value=>Number(value))
+    .filter(value=>Number.isFinite(value) && value>=0);
+
+  const recovered=candidates.length?Math.max(...candidates):0;
+
+  // One-time migration to a canonical state object prevents later legacy
+  // renderers from restoring a stale zero.
+  localStorage.setItem(
+    V3211_ANNUAL_BUDGET_STATE_KEY,
+    JSON.stringify({value:recovered,updatedAt:new Date().toISOString(),migrated:true})
+  );
+
+  return recovered;
 }
+
+function v309AnnualBudget(){
+  return v3211ReadAnnualBudget();
+}
+
 function v309SetAnnualBudget(value){
   const safe=Math.max(0,Number(value)||0);
+  const state={value:safe,updatedAt:new Date().toISOString(),source:'dean'};
+
+  localStorage.setItem(V3211_ANNUAL_BUDGET_STATE_KEY,JSON.stringify(state));
   localStorage.setItem(V309_ANNUAL_BUDGET_KEY,String(safe));
   localStorage.setItem('sah-v30-annual-budget',String(safe));
+
+  return safe;
 }
 
 function v309Money(value){return `${Number(value||0).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;}
@@ -8208,6 +8241,7 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
 (function(){
   'use strict';
 
+  const STATE_KEY='sah-v3211-annual-budget-state';
   const PRIMARY_KEY='sah-v309-annual-budget';
   const LEGACY_KEY='sah-v30-annual-budget';
 
@@ -8248,15 +8282,39 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
   }
 
   function annualBudget(){
-    const primary=numberFrom(localStorage.getItem(PRIMARY_KEY));
-    const legacy=numberFrom(localStorage.getItem(LEGACY_KEY));
-    return primary>0?primary:(legacy>0?legacy:0);
+    try{
+      const state=JSON.parse(localStorage.getItem(STATE_KEY)||'null');
+      if(state && Number.isFinite(Number(state.value)) && Number(state.value)>=0){
+        return Math.max(0,Number(state.value));
+      }
+    }catch{}
+
+    const values=[
+      localStorage.getItem(PRIMARY_KEY),
+      localStorage.getItem(LEGACY_KEY)
+    ]
+      .filter(value=>value!==null && value!=='')
+      .map(numberFrom)
+      .filter(value=>Number.isFinite(value) && value>=0);
+
+    const recovered=values.length?Math.max(...values):0;
+
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({value:recovered,updatedAt:new Date().toISOString(),migrated:true})
+    );
+
+    return recovered;
   }
 
   function setAnnualBudget(value){
     const safe=Math.max(0,numberFrom(value));
+    const state={value:safe,updatedAt:new Date().toISOString(),source:'dean'};
+
+    localStorage.setItem(STATE_KEY,JSON.stringify(state));
     localStorage.setItem(PRIMARY_KEY,String(safe));
     localStorage.setItem(LEGACY_KEY,String(safe));
+
     return safe;
   }
 
@@ -8331,6 +8389,10 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
   }
 
   function refreshBudgetUI(){
+    const canonical=annualBudget();
+    localStorage.setItem(PRIMARY_KEY,String(canonical));
+    localStorage.setItem(LEGACY_KEY,String(canonical));
+
     const t=totals();
 
     setText('generalApprovedBudget',money(t.spent));
@@ -8452,7 +8514,14 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
       return;
     }
 
-    setAnnualBudget(raw);
+    const saved=setAnnualBudget(raw);
+    const verification=annualBudget();
+
+    if(verification!==saved){
+      window.showToast?.('تعذر تثبيت قيمة الميزانية. حاول مرة أخرى.');
+      return;
+    }
+
     refreshBudgetUI();
     closeModal();
 
@@ -8516,7 +8585,7 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
     refreshBudgetUI();
 
     document.documentElement.dataset.sahBuild='32.9';
-    console.info('SAH build 32.10 budget button visibility + Dean lock loaded');
+    console.info('SAH build 32.11 budget button visibility + Dean lock loaded');
   }
 
   window.SAH_DEAN_BUDGET={
@@ -8539,4 +8608,16 @@ window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind()
 window.addEventListener('DOMContentLoaded',()=>{
   document.documentElement.dataset.sahBuild='32.9';
   console.info('SAH V32.9 active: stable render loop fix + visible budget edit control.');
+});
+
+
+/* SAH V32.11 — canonical annual budget persistence */
+window.addEventListener('DOMContentLoaded',()=>{
+  try{
+    window.SAH_DEAN_BUDGET?.refresh?.();
+  }catch(error){
+    console.error('SAH V32.11 budget refresh failed',error);
+  }
+  document.documentElement.dataset.sahBuild='32.11';
+  console.info('SAH build 32.11 persistent budget + true centered button loaded');
 });
