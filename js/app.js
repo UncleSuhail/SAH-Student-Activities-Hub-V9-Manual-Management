@@ -8387,7 +8387,28 @@ function populateReportEvents(force=null){const select=document.getElementById('
 function scopeLabel(s){return s==='sports'?'الشؤون الرياضية':s==='club'?'الأندية الطلابية':s==='volunteer'?'الفرص التطوعية':'المجلس الطلابي'}
 function autofillReport(select){const opt=select.selectedOptions[0];if(!opt?.value)return;const store=opt.dataset.store,row=findEvent(store,opt.value);if(!row)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};set('activityName',row.name);set('activityDate',row.date);set('activityDays',row.days||1);set('activityBeneficiaries',row.expectedBeneficiaries||row.capacity||0);set('activityPlayers',acceptedCount(row.id));set('activityGender',row.gender||'الاثنان معًا');set('activityBudget',row.budget||0);let cat=store===V32.sports?'الأنشطة الرياضية':store===V32.volunteer?'الأنشطة و البرامج المجتمعية و التطوعية':store===V32.council?(row.category||'برامج عامة على مستوى الجامعة'):'برامج عامة على مستوى الجامعة';set('activityEventCategory',cat);const game=row.game||row.type||row.category||'أخرى';set('activityGameType',game);const other=/أخرى|اخرى|رياضة أخرى/.test(game);document.getElementById('activityGameTypeOtherWrap')?.classList.toggle('hidden',!other);const otherInput=document.getElementById('activityGameTypeOther');if(otherInput){otherInput.required=other;if(!other)otherInput.value=''}}
 function reportBadgeFor(row,store){return window.v32ReportBadge(row,store)}
-function eventList(scope){const store=scope==='sports'?V32.sports:scope==='club'?V32.club:scope==='volunteer'?V32.volunteer:V32.council;return storeRows(store).filter(e=>e.status==='مقبول').map(e=>({...e,__store:store}))}
+function eventList(scope){
+  const store=scope==='sports'?V32.sports:scope==='club'?V32.club:scope==='volunteer'?V32.volunteer:V32.council;
+  const rows=storeRows(store).filter(e=>e.status==='مقبول').map(e=>({...e,__store:store}));
+
+  const eventStamp=e=>{
+    const parsed=Date.parse(`${String(e.date||'1970-01-01')}T${String(e.startTime||'00:00')}:00`);
+    return Number.isFinite(parsed)?parsed:0;
+  };
+
+  return rows.sort((a,b)=>{
+    const aClosed=!!(a.finished||a.cancelled);
+    const bClosed=!!(b.finished||b.cancelled);
+
+    if(aClosed!==bClosed)return aClosed?1:-1;
+    if(!aClosed&&!bClosed)return eventStamp(b)-eventStamp(a);
+
+    const aClosedAt=Date.parse(a.cancelledAt||a.finishedAt||'')||eventStamp(a);
+    const bClosedAt=Date.parse(b.cancelledAt||b.finishedAt||'')||eventStamp(b);
+    return bClosedAt-aClosedAt;
+  });
+}
+
 function acceptedFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&a.status==='مقبول').length}
 function pendingFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&(!a.status||a.status==='تحت المراجعة')).length}
 function rejectedFor(id){return apps().filter(a=>String(a.requestId)===String(id)&&a.status==='مرفوض').length}
@@ -8411,25 +8432,60 @@ function renderIndex(scope){
     const fill=cap>0?Math.max(0,Math.min(100,Math.round(ac/cap*100))):0;
     const full=cap>0&&vac===0;
 
+    const eventState=e.cancelled
+      ? {key:'cancelled',label:'الحدث ملغي'}
+      : e.finished
+        ? {key:'finished',label:'الحدث منتهي'}
+        : {key:'active',label:'الحدث قائم'};
+
+    const capacityLabel=e.cancelled
+      ? 'حالة المشاركة'
+      : e.finished
+        ? 'إجمالي المقبولين'
+        : full
+          ? 'اكتملت المقاعد'
+          : 'المقاعد المتبقية';
+
+    const capacityValue=e.cancelled?'—':e.finished?ac:vac;
+
+    const capacityMeta=e.cancelled
+      ? 'تم إغلاق المشاركة بسبب إلغاء الحدث'
+      : e.finished
+        ? (cap>0?`${ac} من أصل ${cap} مقعد`:`${ac} مشارك مقبول`)
+        : (cap>0?`من أصل ${cap} مقعد`:'لم تحدد سعة للمشاركة');
+
+    const footerText=e.cancelled
+      ? 'تم إغلاق طلبات المشاركة لهذا الحدث.'
+      : e.finished
+        ? 'الحدث منتهي وتم تثبيت قائمة المشاركين النهائية.'
+        : full
+          ? 'تم إغلاق القبول تلقائيًا لاكتمال السعة.'
+          : 'ينخفض العدد تلقائيًا مع كل مشارك يتم قبوله.';
+
     return `<button type="button"
-      class="participant-event-card ${String(v32Selected[scope])===String(e.id)?'active':''}"
+      class="participant-event-card ${String(v32Selected[scope])===String(e.id)?'active':''} ${eventState.key==='finished'?'event-card-finished':''} ${eventState.key==='cancelled'?'event-card-cancelled':''}"
       data-select-participant-event="${e.id}"
       data-scope="${scope}">
         <span>${e.name}</span>
         <small>${e.date} • ${e.startTime||'09:00'}–${e.endTime||'17:00'} • ${Math.max(1,Number(e.days)||1)} يوم</small>
 
+        <div class="participant-event-state-row">
+          <span class="participant-event-state-badge ${eventState.key}">${eventState.label}</span>
+          ${e.cancelled&&e.cancellationReason?`<small class="participant-event-cancel-reason" title="${e.cancellationReason}">${e.cancellationReason}</small>`:''}
+        </div>
+
         <div class="participant-event-stats">
           <b>${ac}<i>مقبول</i></b>
           <b>${pc}<i>مراجعة</i></b>
           <b>${rc}<i>مرفوض</i></b>
-          <b class="vacant">${vac}<i>مقاعد شاغرة</i></b>
+          <b class="vacant">${e.finished||e.cancelled?'—':vac}<i>${e.finished?'مقبول نهائي':e.cancelled?'مغلق':'مقاعد شاغرة'}</i></b>
         </div>
 
         <div class="participant-capacity-panel ${full?'is-full':''}">
           <div class="participant-capacity-copy">
-            <span class="participant-capacity-label">${full?'اكتملت المقاعد':'المقاعد المتبقية'}</span>
-            <strong>${vac}</strong>
-            <small>${cap>0?`من أصل ${cap} مقعد`:'لم تحدد سعة للمشاركة'}</small>
+            <span class="participant-capacity-label">${capacityLabel}</span>
+            <strong>${capacityValue}</strong>
+            <small>${capacityMeta}</small>
           </div>
 
           <div class="participant-capacity-progress-wrap">
@@ -8440,7 +8496,7 @@ function renderIndex(scope){
             <div class="participant-capacity-track" aria-label="نسبة امتلاء المقاعد">
               <span style="width:${cap>0?fill:0}%"></span>
             </div>
-            <small>${full?'تم إغلاق القبول تلقائيًا لاكتمال السعة.':'ينخفض العدد تلقائيًا مع كل مشارك يتم قبوله.'}</small>
+            <small>${footerText}</small>
           </div>
         </div>
       </button>`;
@@ -8448,6 +8504,7 @@ function renderIndex(scope){
 
   renderParticipants(scope);
 }
+
 function participantAction(a,event,scope){const cap=Number(event.capacity)||0, ac=acceptedFor(event.id), full=cap>0&&ac>=cap;if(a.status==='مقبول')return `<div class="participant-final accepted"><span>مقبول</span><button class="v32-cancel-accept" data-id="${a.id}" data-scope="${scope}" type="button">إلغاء المشاركة</button><div class="v32-cancel-accept-editor hidden"><input maxlength="160" placeholder="سبب إلغاء القبول — 15 كلمة كحد أقصى"><button class="v32-confirm-cancel-accept" data-id="${a.id}" data-scope="${scope}" type="button">تأكيد</button></div></div>`;if(a.status==='مرفوض')return `<div class="participant-final rejected"><span>مرفوض</span><button class="v32-undo-reject" data-id="${a.id}" data-scope="${scope}" type="button">إلغاء الرفض</button></div>`;return `<div class="participant-pending-actions"><button class="v32-accept-participant" data-id="${a.id}" data-scope="${scope}" type="button" ${full?'disabled':''}>${full?'اكتملت المقاعد':'قبول'}</button><button class="v32-reject-participant" data-id="${a.id}" data-scope="${scope}" type="button">رفض</button><div class="v32-reject-editor hidden"><input placeholder="سبب الرفض"><button class="v32-confirm-reject" data-id="${a.id}" data-scope="${scope}" type="button">تأكيد</button></div></div>`}
 function renderParticipants(scope){const ids=participantScopeIds(scope);if(!ids)return;const [tbodyId,searchId,statusId]=ids,body=document.getElementById(tbodyId);if(!body)return;const event=eventList(scope).find(e=>String(e.id)===String(v32Selected[scope]));if(!event){body.innerHTML='<tr><td colspan="8">اختر حدثًا لعرض المشاركين.</td></tr>';return}const q=(document.getElementById(searchId)?.value||'').toLowerCase(),st=document.getElementById(statusId)?.value||'all';let rows=apps().filter(a=>String(a.requestId)===String(event.id)&&!a.closedByEventEnd&&a.status!=='انتهى الحدث');rows=rows.filter(a=>st==='all'||String(a.status||'تحت المراجعة')===st).filter(a=>!q||[event.name,event.date,a.eventName,a.student?.name,a.student?.studentId,a.student?.email,a.student?.phone].join(' ').toLowerCase().includes(q));body.innerHTML=rows.length?rows.map(a=>`<tr><td><strong>${event.name}</strong></td><td>${a.student?.name||'—'}</td><td>${a.student?.studentId||'—'}</td><td>${a.student?.email||'—'}</td><td>${a.student?.age||'—'}</td><td>${a.student?.gender||'—'}</td><td>${a.student?.phone||'—'}</td><td>${participantAction(a,event,scope)}</td></tr>`).join(''):'<tr><td colspan="8">لا توجد طلبات مشاركين مطابقة.</td></tr>'}
 function updateApp(id,fn){const aa=apps(),a=aa.find(x=>x.id===id);if(!a)return;fn(a);write(V32.apps,aa);window.renderAll?.();setTimeout(refresh,40)}
@@ -9113,4 +9170,9 @@ window.SAH_EVENT_EDIT={begin:beginEdit,cancel:scope=>{
 window.addEventListener('DOMContentLoaded',()=>{
   document.documentElement.dataset.sahBuild='32.14';
   console.info('SAH build 32.14 event cancel / early end / pending edit loaded');
+});
+
+window.addEventListener('DOMContentLoaded',()=>{
+  document.documentElement.dataset.sahBuild='32.15';
+  console.info('SAH build 32.15 participant cards status and RTL auto order loaded');
 });

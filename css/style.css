@@ -14604,3 +14604,84 @@ body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
     flex-direction:column!important;
   }
 }
+
+
+/* ==========================================================
+   SAH V32.15 — participant event status + RTL auto order
+   ========================================================== */
+.participant-event-index{
+  direction:rtl!important;
+  scroll-behavior:smooth!important;
+}
+
+.participant-event-state-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  width:100%!important;
+  margin-top:8px!important;
+  min-width:0!important;
+}
+
+.participant-event-state-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:27px!important;
+  padding:5px 10px!important;
+  border-radius:999px!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  white-space:nowrap!important;
+}
+
+.participant-event-state-badge.active{
+  background:#eaf7ef!important;
+  border:1px solid #cce7d7!important;
+  color:#23784b!important;
+}
+
+.participant-event-state-badge.finished{
+  background:#eef3f8!important;
+  border:1px solid #d5dfeb!important;
+  color:#576b84!important;
+}
+
+.participant-event-state-badge.cancelled{
+  background:#fff0f2!important;
+  border:1px solid #efcbd3!important;
+  color:#a72e43!important;
+}
+
+.participant-event-cancel-reason{
+  min-width:0!important;
+  max-width:62%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#9a6670!important;
+  font-size:8px!important;
+}
+
+.participant-event-card.event-card-finished,
+.participant-event-card.event-card-cancelled{
+  border-color:#d8e1ec!important;
+  background:linear-gradient(145deg,#f9fbfd 0%,#f3f6f9 100%)!important;
+  box-shadow:none!important;
+}
+
+.participant-event-card.event-card-cancelled{
+  opacity:.88!important;
+}
+
+.participant-event-card.event-card-finished .participant-capacity-panel,
+.participant-event-card.event-card-cancelled .participant-capacity-panel{
+  background:#f5f7fa!important;
+  border-color:#dce4ed!important;
+}
+
+.participant-event-card.event-card-finished .participant-capacity-track>span,
+.participant-event-card.event-card-cancelled .participant-capacity-track>span{
+  background:linear-gradient(90deg,#7187a3,#9aaabd)!important;
+}
