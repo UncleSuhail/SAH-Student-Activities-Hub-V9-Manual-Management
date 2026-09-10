@@ -66,7 +66,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 }
 </style>
 
-<link href="css/style.css?v=32.13" rel="stylesheet"/>
+<link href="css/style.css?v=32.14" rel="stylesheet"/>
 <style id="sah-mobile-critical-v201">
 @media (max-width:1100px){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
@@ -130,7 +130,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 }
 </style>
 </head>
-<body class="login-mode" data-sah-version="32.13">
+<body class="login-mode" data-sah-version="32.14">
 <section class="login-page" id="login">
 <div class="login-bg"></div>
 <div class="login-card">
@@ -1231,7 +1231,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 </section>
 <section class="page" id="page-volunteer"><div class="page-back-bar"><button class="page-back-btn" data-role-home-back="1" type="button"><span aria-hidden="true">←</span><strong>الرجوع</strong></button><small>العودة إلى الصفحة الرئيسية المخصصة لحسابك</small></div>
 <div class="section-title"><div><h3>الفرص التطوعية</h3><p>إنشاء فرصة تطوعية وإرسالها للاعتماد.</p></div></div>
-<div class="card"><form class="workflow-form" id="volunteerOpportunityForm">
+<div class="card"><form class="workflow-form" id="volunteerOpportunityForm"><div class="event-edit-notice hidden" id="volunteerEventEditNotice"><strong>تعديل طلب قيد المراجعة</strong><span>احفظ التعديلات قبل اعتماد أو رفض الفرصة.</span></div>
 <label><span>نوع العمل التطوعي</span><input id="volunteerType" required=""/></label>
 <label><span>عدد الأفراد المطلوبين</span><input id="volunteerCapacity" min="1" required="" type="number"/></label>
 <label><span>اسم الحدث</span><input id="volunteerEventName" required=""/></label><label class="event-description-field">
@@ -1251,7 +1251,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <input id="volunteerBudget" min="0" placeholder="0" required="" step="0.01" type="number"/>
 <small>التكلفة التقديرية المطلوبة لتنفيذ الفرصة التطوعية.</small>
 </label></label>
-<div class="form-submit-row"><button class="btn primary" id="submitVolunteerOpportunity" type="button">إرسال الطلب</button></div>
+<div class="form-submit-row"><button class="btn outline hidden cancel-event-edit" data-cancel-event-edit="volunteer" type="button">إلغاء التعديل</button><button class="btn primary" id="submitVolunteerOpportunity" type="button">إرسال الطلب</button></div>
 </form></div>
 <div class="card table-card records-table-card">
 <h4>طلبات الفرص التطوعية</h4>
@@ -1354,7 +1354,8 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 </section>
 <section class="page" id="page-sports-request"><div class="page-back-bar"><button class="page-back-btn" data-role-home-back="1" type="button"><span aria-hidden="true">←</span><strong>الرجوع</strong></button><small>العودة إلى الصفحة الرئيسية المخصصة لحسابك</small></div>
 <div class="section-title"><div><h3>تقديم طلب تنفيذ بطولة/حدث</h3><p>يشترط ثلاثة أيام على الأقل بين التقديم والحدث.</p></div></div>
-<div class="card"><form class="workflow-form">
+<div class="card"><form class="workflow-form" id="sportsEventRequestForm">
+<div class="event-edit-notice hidden" id="sportsEventEditNotice"><strong>تعديل طلب قيد المراجعة</strong><span>يمكن حفظ التعديلات ما دام الطلب لم يُقبل أو يُرفض.</span></div>
 <label><span>اسم الحدث/البطولة</span><input id="sportsReqName" required=""/></label><label class="event-description-field">
 <span>وصف الحدث</span>
 <textarea data-word-counter="sportsReqDescriptionCounter" data-word-limit="35" id="sportsReqDescription" placeholder="اكتب وصفًا مختصرًا للحدث بحد أقصى 35 كلمة" required="" rows="3"></textarea>
@@ -1379,7 +1380,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <small>أدخل التكلفة التقديرية المطلوبة لتنفيذ البطولة أو الحدث.</small>
 </label></label>
 <label><span>الفئة المستهدفة</span><select id="sportsReqGender" required=""><option disabled="" selected="" value="">اختر الفئة المستهدفة</option><option>طلاب</option><option>طالبات</option><option>الاثنان معًا</option></select></label>
-<div class="form-submit-row"><button class="btn primary" id="submitSportsRequest" type="button">إرسال الطلب</button></div>
+<div class="form-submit-row"><button class="btn outline hidden cancel-event-edit" data-cancel-event-edit="sports" type="button">إلغاء التعديل</button><button class="btn primary" id="submitSportsRequest" type="button">إرسال الطلب</button></div>
 </form></div>
 <div class="card table-card records-table-card">
 <h4>طلبات تنفيذ البطولات والأحداث</h4>
@@ -1430,7 +1431,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <label><span>الفئة</span><select id="clubGender" required=""><option disabled="" selected="" value="">اختر الفئة</option><option>طلاب</option><option>طالبات</option><option>الاثنان معًا</option></select></label>
 <button class="btn primary club-form-submit" id="submitClubRequest" type="button">إرسال طلب النادي</button>
 </form></div>
-<div class="card"><h4>تقديم طلب مبادرة / فعالية تابعة للنادي</h4><form class="workflow-form single-column">
+<div class="card"><h4>تقديم طلب مبادرة / فعالية تابعة للنادي</h4><form class="workflow-form single-column" id="clubEventRequestForm"><div class="event-edit-notice hidden" id="clubEventEditNotice"><strong>تعديل طلب قيد المراجعة</strong><span>يمكن تعديل بيانات الفعالية قبل صدور قرار الاعتماد فقط.</span></div>
 <label>
 <span>النادي</span>
 <select id="clubEventClub" required="">
@@ -1454,7 +1455,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <input id="clubEventBudget" min="0" placeholder="0" required="" step="0.01" type="number"/>
 <small>الميزانية التقديرية المطلوبة لتنفيذ مبادرة أو فعالية النادي.</small>
 </label></label>
-<button class="btn primary club-form-submit" id="submitClubEventRequest" type="button">إرسال طلب الفعالية</button>
+<div class="form-submit-row"><button class="btn outline hidden cancel-event-edit" data-cancel-event-edit="club" type="button">إلغاء التعديل</button><button class="btn primary club-form-submit" id="submitClubEventRequest" type="button">إرسال طلب الفعالية</button></div>
 </form></div>
 </div>
 <div class="card table-card records-table-card">
@@ -1560,7 +1561,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <div class="section-title compact-title">
 <div><h3>تقديم نشاط للمجلس الطلابي</h3><p>يرسل الطلب إلى صلاحيات عمادة شؤون الطلاب للموافقة أو الرفض.</p></div>
 </div>
-<form class="workflow-form single-column" id="councilActivityForm">
+<form class="workflow-form single-column" id="councilActivityForm"><div class="event-edit-notice hidden" id="councilEventEditNotice"><strong>تعديل طلب قيد المراجعة</strong><span>التعديل متاح قبل اعتماد أو رفض نشاط المجلس فقط.</span></div>
 <label><span>اسم النشاط</span><input id="councilActivityName" required=""/></label>
 <label><span>وصف النشاط</span><textarea id="councilActivityDescription" required="" rows="3"></textarea></label>
 <label><span>نوع النشاط</span>
@@ -1583,7 +1584,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 </label>
 <label><span>الحد الأقصى للمشاركين</span><input id="councilActivityCapacity" min="1" required="" type="number"/></label>
 <label class="budget-field"><span>الميزانية المطلوبة (ر.س)</span><input id="councilActivityBudget" min="0" required="" step="0.01" type="number"/></label>
-<div class="form-submit-row"><button class="btn primary" type="submit">إرسال النشاط للاعتماد</button></div>
+<div class="form-submit-row"><button class="btn outline hidden cancel-event-edit" data-cancel-event-edit="council" type="button">إلغاء التعديل</button><button class="btn primary" id="submitCouncilActivity" type="submit">إرسال النشاط للاعتماد</button></div>
 </form>
 <div class="table-wrap">
 <table>
@@ -2238,7 +2239,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 </div>
 <script src="js/data.js?v=22.0"></script>
 <script src="js/admin.js?v=22.0"></script>
-<script src="js/app.js?v=32.13"></script>
+<script src="js/app.js?v=32.14"></script>
 <div aria-modal="true" class="modal hidden" id="finishEventModal" role="dialog">
 <div class="modal-backdrop" data-close-finish-event=""></div>
 <div class="modal-card university-confirm-modal finish-event-modern-modal"><div class="finish-event-confirm-shell">
@@ -2289,5 +2290,5 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <label class="annual-budget-field"><span>الميزانية السنوية الكاملة (ر.س)</span><input id="annualBudgetInput" min="0" placeholder="مثال: 500000" step="1000" type="number"/></label>
 <div class="annual-budget-modal-actions"><button class="btn outline" data-close-annual-budget="" type="button">إلغاء</button><button class="btn primary" id="saveAnnualBudget" type="button">حفظ وتحديث الميزانية</button></div>
 </div>
-</div><div aria-modal="true" class="modal hidden" id="reportRequiredModal" role="dialog"><div class="modal-backdrop" data-close-report-required=""></div><div class="modal-card report-required-modal-card"><div class="report-required-brand"><strong>UBT</strong><span>Student Activities Platform</span></div><div class="report-required-icon">!</div><h3>يجب تسجيل تقرير الحدث أولًا</h3><p id="reportRequiredMessage">لا يمكن إنهاء الحدث قبل ربطه بتقرير في صفحة التقارير والتحليلات.</p><div class="report-required-steps"><span>1</span><p>انتقل إلى التقارير والتحليلات.</p><span>2</span><p>اختر «إضافة نشاط» وسيتم تحديد الحدث تلقائيًا حسب صلاحيتك.</p><span>3</span><p>أكمل ملفات التقرير والتوثيق ثم عد لإنهاء الحدث.</p></div><div class="modal-actions centered"><button class="btn outline" data-close-report-required="" type="button">إلغاء</button><button class="btn primary" id="goToEventReport" type="button">الانتقال إلى إضافة نشاط</button></div></div></div><div aria-modal="true" class="modal hidden" id="earlyFinishModal" role="dialog"><div class="modal-backdrop" data-close-early-finish=""></div><div class="modal-card early-finish-modal-card"><div class="early-finish-brand"><span>UBT</span><div><strong>تأكيد الإنهاء المبكر</strong><small>Student Activities Platform</small></div></div><div class="early-finish-warning">!</div><h3>هل أنت متأكد؟</h3><p id="earlyFinishDescription">يتم إنهاء هذا الحدث قبل موعده المسجل.</p><label><span id="earlyFinishReasonLabel">سبب عدم بدء الحدث</span><textarea data-word-limit="15" id="earlyFinishReason" placeholder="اكتب السبب بحد أقصى 15 كلمة" rows="4"></textarea><small><b id="earlyFinishWordCount">0</b> / 15 كلمة</small></label><div class="modal-actions centered"><button class="btn outline" data-close-early-finish="" type="button">إلغاء</button><button class="btn danger" id="confirmEarlyFinish" type="button">تأكيد إنهاء الحدث</button></div></div></div></body>
+</div><div aria-modal="true" class="modal hidden" id="reportRequiredModal" role="dialog"><div class="modal-backdrop" data-close-report-required=""></div><div class="modal-card report-required-modal-card"><div class="report-required-brand"><strong>UBT</strong><span>Student Activities Platform</span></div><div class="report-required-icon">!</div><h3>يجب تسجيل تقرير الحدث أولًا</h3><p id="reportRequiredMessage">لا يمكن إنهاء الحدث قبل ربطه بتقرير في صفحة التقارير والتحليلات.</p><div class="report-required-steps"><span>1</span><p>انتقل إلى التقارير والتحليلات.</p><span>2</span><p>اختر «إضافة نشاط» وسيتم تحديد الحدث تلقائيًا حسب صلاحيتك.</p><span>3</span><p>أكمل ملفات التقرير والتوثيق ثم عد لإنهاء الحدث.</p></div><div class="modal-actions centered"><button class="btn outline" data-close-report-required="" type="button">إلغاء</button><button class="btn primary" id="goToEventReport" type="button">الانتقال إلى إضافة نشاط</button></div></div></div><div aria-modal="true" class="modal hidden" id="earlyFinishModal" role="dialog"><div class="modal-backdrop" data-close-early-finish=""></div><div class="modal-card early-finish-modal-card"><div class="early-finish-brand"><span>UBT</span><div><strong id="earlyFinishModalHeading">إجراء على الحدث</strong><small>Student Activities Platform</small></div></div><div class="early-finish-warning">!</div><h3 id="earlyFinishModalTitle">هل أنت متأكد؟</h3><p id="earlyFinishDescription">يتم إنهاء هذا الحدث قبل موعده المسجل.</p><label><span id="earlyFinishReasonLabel">سبب عدم بدء الحدث</span><textarea data-word-limit="15" id="earlyFinishReason" placeholder="اكتب السبب بحد أقصى 15 كلمة" rows="4"></textarea><small><b id="earlyFinishWordCount">0</b> / 15 كلمة</small></label><div class="modal-actions centered"><button class="btn outline" data-close-early-finish="" type="button">إلغاء</button><button class="btn danger" id="confirmEarlyFinish" type="button"><span id="earlyFinishActionLabel">تأكيد الإجراء</span></button></div></div></div></body>
 </html>

@@ -3828,10 +3828,30 @@ function tables(){
      : `<tr><td colspan="${colspan}" class="empty-filtered-row">لا توجد نتائج مطابقة.</td></tr>`;
  };
 
+ const currentEventEditorRole=()=>document.getElementById('activeRole')?.value||document.getElementById('mobileActiveRole')?.value||localStorage.getItem('sah-v15-role')||'system';
+ const canEditPendingEvent=(store)=>{
+   const role=currentEventEditorRole();
+   if(store===K.sports)return role==='sports_manager';
+   if(store===K.clubEvents)return role==='faculty';
+   if(store===K.vol)return role==='activities_manager';
+   return false;
+ };
  const finishAction=row=>{
-   if(row.status!=='مقبول')return '—';
-   if(row.finished)return '<span class="event-finished-badge">منتهي</span>';
-   return `<button class="finish-event-btn" type="button" data-finish-store="${row.__store||''}" data-finish-id="${row.id}">إنهاء الحدث</button>`;
+   const actions=[];
+
+   if(row.cancelled){
+     actions.push(`<span class="event-cancelled-badge" title="${row.cancellationReason||''}">ملغي</span>`);
+   }else if(row.finished){
+     actions.push('<span class="event-finished-badge">منتهي</span>');
+   }else if(row.status==='مقبول'){
+     actions.push(`<button class="finish-event-btn" type="button" data-finish-store="${row.__store||''}" data-finish-id="${row.id}">إنهاء الحدث</button>`);
+   }
+
+   if(row.status==='تحت المراجعة'&&canEditPendingEvent(row.__store)){
+     actions.push(`<button class="edit-pending-event-btn" data-edit-event-store="${row.__store||''}" data-edit-event-id="${row.id}" type="button">تعديل الطلب</button>`);
+   }
+
+   return actions.length?`<div class="event-row-actions">${actions.join('')}</div>`:'—';
  };
 
  put(
@@ -3972,7 +3992,12 @@ function student(){
    const eventFinished=req?.finished===true || x.status==='انتهى الحدث' || x.closedByEventEnd===true;
 
    let statusCell;
-   if(x.status==='مرفوض'){
+   if(req?.cancelled===true || x.eventCancelled===true || x.status==='تم إلغاء الحدث'){
+     statusCell=`<div class="student-event-ended-status cancelled">
+       <span class="request-status event-cancelled">تم إلغاء الحدث</span>
+       ${(req?.cancellationReason||x.cancellationReason)?`<small class="event-ended-participation-note not-selected">${req?.cancellationReason||x.cancellationReason}</small>`:''}
+     </div>`;
+   }else if(x.status==='مرفوض'){
      statusCell=badge('مرفوض');
    }else if(eventFinished){
      const participationNote=x.status==='مقبول'
@@ -7187,8 +7212,16 @@ function renderCouncil(){
   if(activityBody)activityBody.innerHTML=activities.length?activities.map(row=>`<tr>
     <td><strong>${row.name}</strong></td><td>${row.date}</td><td>${row.category}</td><td>${money(row.budget)}</td>
     <td>${row.status==='مقبول'?'<span class="request-status accepted">مقبول</span>':row.status==='مرفوض'?'<span class="request-status rejected">مرفوض</span>':'<span class="request-status pending">تحت المراجعة</span>'}</td>
-    <td>${window.v32ReportBadge?.(row,V30.councilActivities)||'—'}</td><td>${row.finished?'<span class="event-finished-badge">منتهي</span>':'قائم'}</td>
-    <td>${row.status==='مقبول'&&!row.finished?`<button class="finish-event-btn" data-finish-store="${V30.councilActivities}" data-finish-id="${row.id}" type="button">إنهاء الحدث</button>`:'—'}</td>
+    <td>${window.v32ReportBadge?.(row,V30.councilActivities)||'—'}</td><td>${row.cancelled?'<span class="event-cancelled-badge">ملغي</span>':row.finished?'<span class="event-finished-badge">منتهي</span>':'قائم'}</td>
+    <td><div class="event-row-actions">${
+      row.status==='تحت المراجعة'&&currentRoleV30()==='student_council'
+        ? `<button class="edit-pending-event-btn" data-edit-event-store="${V30.councilActivities}" data-edit-event-id="${row.id}" type="button">تعديل الطلب</button>`
+        : ''
+    }${
+      row.status==='مقبول'&&!row.finished
+        ? `<button class="finish-event-btn" data-finish-store="${V30.councilActivities}" data-finish-id="${row.id}" type="button">إنهاء الحدث</button>`
+        : ''
+    }</div></td>
   </tr>`).join(''):'<tr><td colspan="8">لا توجد أنشطة.</td></tr>';
 
   const meetingBody=document.getElementById('councilMeetingRows');
@@ -8235,14 +8268,121 @@ function words15(v){return String(v||'').trim().split(/\s+/).filter(Boolean).sli
 function openReportRequired(store,id){v32PendingReport={store,id};const row=findEvent(store,id);const m=document.getElementById('reportRequiredMessage');if(m)m.textContent=`لا يمكن إنهاء «${row?.name||'الحدث'}» قبل تسجيل وربط تقريره في التقارير والتحليلات.`;document.getElementById('reportRequiredModal')?.classList.remove('hidden')}
 function closeReportRequired(){document.getElementById('reportRequiredModal')?.classList.add('hidden')}
 function goReport(){if(!v32PendingReport)return;const target=v32PendingReport;closeReportRequired();window.route?.('reports');setTimeout(()=>{v32PendingReport=target;document.getElementById('openAddActivity')?.click();setTimeout(()=>populateReportEvents(target),120)},180)}
-function earlyMode(row){const now=new Date(), dt=eventDateTime(row);if(!dt)return '';const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;if(row.date>today)return 'not-started';if(row.date===today&&now<dt)return 'same-day';return ''}
-function openEarly(store,id,mode){v32PendingFinish={store,id,mode};const row=findEvent(store,id);const label=document.getElementById('earlyFinishReasonLabel');const desc=document.getElementById('earlyFinishDescription');if(mode==='not-started'){label.textContent='سبب عدم بدء الحدث';desc.textContent=`موعد «${row?.name||'الحدث'}» لم يبدأ بعد. اذكر سبب إنهائه قبل الموعد.`}else{label.textContent='سبب إنهاء الحدث باكرًا';desc.textContent=`يتم إنهاء «${row?.name||'الحدث'}» في نفس يومه وقبل وقت البدء المسجل.`}const ta=document.getElementById('earlyFinishReason');ta.value='';document.getElementById('earlyFinishWordCount').textContent='0';document.getElementById('earlyFinishModal')?.classList.remove('hidden');setTimeout(()=>ta.focus(),80)}
+function earlyMode(row){
+  const now=new Date();
+  const start=eventDateTime(row);
+  const end=eventEndDateTime(row);
+  if(!start||!end)return '';
+
+  const startDay=new Date(`${row.date}T00:00:00`);
+  const endDay=new Date(end);endDay.setHours(23,59,59,999);
+  const today=new Date(now);today.setHours(0,0,0,0);
+
+  if(today<startDay)return 'cancel';
+  if(today>=startDay&&today<=endDay&&now<end)return 'early';
+  return '';
+}
+function openEarly(store,id,mode){
+  v32PendingFinish={store,id,mode};
+  const row=findEvent(store,id);
+  const label=document.getElementById('earlyFinishReasonLabel');
+  const desc=document.getElementById('earlyFinishDescription');
+  const heading=document.getElementById('earlyFinishModalHeading');
+  const title=document.getElementById('earlyFinishModalTitle');
+  const action=document.getElementById('earlyFinishActionLabel');
+
+  if(mode==='cancel'){
+    if(heading)heading.textContent='إلغاء الحدث قبل بدايته';
+    if(title)title.textContent='هل تريد إلغاء الحدث؟';
+    if(label)label.textContent='سبب إلغاء الحدث';
+    if(action)action.textContent='إلغاء الحدث';
+    if(desc)desc.textContent=`لم يبدأ «${row?.name||'الحدث'}» بعد. سيُلغى الحدث ولن يُطلب تقرير تنفيذ له.`;
+  }else{
+    if(heading)heading.textContent='إنهاء الحدث باكرًا';
+    if(title)title.textContent='هل تريد إنهاء الحدث باكرًا؟';
+    if(label)label.textContent='سبب إنهاء الحدث باكرًا';
+    if(action)action.textContent='إنهاء الحدث باكرًا';
+    if(desc)desc.textContent=`الحدث «${row?.name||'الحدث'}» في يومه/مدته المسجلة ولم يصل إلى وقت الانتهاء بعد.`;
+  }
+
+  const ta=document.getElementById('earlyFinishReason');
+  if(ta)ta.value='';
+  const count=document.getElementById('earlyFinishWordCount');if(count)count.textContent='0';
+  document.getElementById('earlyFinishModal')?.classList.remove('hidden');
+  setTimeout(()=>ta?.focus(),80);
+}
 function closeEarly(){document.getElementById('earlyFinishModal')?.classList.add('hidden');v32PendingFinish=null}
+function cancelEvent(store,id,reason=''){
+  const rows=storeRows(store);
+  const row=rows.find(r=>String(r.id)===String(id));
+  if(!row)return;
+
+  const now=new Date().toISOString();
+  row.cancelled=true;
+  row.finished=true;
+  row.cancelledAt=now;
+  row.finishedAt=now;
+  row.cancellationReason=reason;
+  row.earlyEndType='cancel';
+
+  write(store,rows);
+
+  const aa=apps();
+  aa.forEach(a=>{
+    if(String(a.requestId)!==String(id))return;
+    a.status='تم إلغاء الحدث';
+    a.eventCancelled=true;
+    a.closedByEventEnd=true;
+    a.closedAt=now;
+    a.cancellationReason=reason;
+    delete a.surveyAvailable;
+    delete a.surveyAvailableAt;
+  });
+  write(V32.apps,aa);
+
+  window.renderAll?.();
+  setTimeout(refresh,80);
+  window.showToast?.('تم إلغاء الحدث وحفظ سبب الإلغاء.');
+}
+
 function finishNow(store,id,reason='',mode=''){const rows=storeRows(store), row=rows.find(r=>String(r.id)===String(id));if(!row)return;row.finished=true;row.finishedAt=new Date().toISOString();if(reason){row.earlyEndReason=reason;row.earlyEndType=mode}write(store,rows);const aa=apps();aa.forEach(a=>{if(String(a.requestId)!==String(id))return;if(a.status==='مقبول'){a.surveyAvailable=true;a.surveyAvailableAt=new Date().toISOString()}else if(!a.status||a.status==='تحت المراجعة'){a.status='انتهى الحدث';a.closedByEventEnd=true;a.closedAt=new Date().toISOString()}});write(V32.apps,aa);window.renderAll?.();setTimeout(refresh,80);window.showToast?.('تم إنهاء الحدث وتحديث المشاركين وحالة التقرير.')}
-function requestFinish(store,id){const row=findEvent(store,id);if(!row)return;if(!hasReport(row,store)){openReportRequired(store,id);return}const mode=earlyMode(row);if(mode){openEarly(store,id,mode);return}v32PendingFinish={store,id,mode:''};const msg=document.getElementById('finishEventMessage');if(msg)msg.textContent=`هل أنت متأكد من إنهاء «${row.name}»؟ التقرير مرتبط بالحدث وسيتم تفعيل التقييم للمشاركين المقبولين.`;document.getElementById('finishEventModal')?.classList.remove('hidden')}
+function requestFinish(store,id){
+  const row=findEvent(store,id);
+  if(!row)return;
+
+  // Timing actions are evaluated first so cancellation / early-end is never
+  // hidden behind the report requirement.
+  const mode=earlyMode(row);
+  if(mode){openEarly(store,id,mode);return;}
+
+  if(!hasReport(row,store)){openReportRequired(store,id);return;}
+
+  v32PendingFinish={store,id,mode:''};
+  const msg=document.getElementById('finishEventMessage');
+  if(msg)msg.textContent=`هل أنت متأكد من إنهاء «${row.name}»؟ التقرير مرتبط بالحدث وسيتم تفعيل التقييم للمشاركين المقبولين.`;
+  document.getElementById('finishEventModal')?.classList.remove('hidden');
+}
 function confirmNormalFinish(){if(!v32PendingFinish)return;const x=v32PendingFinish;v32PendingFinish=null;document.getElementById('finishEventModal')?.classList.add('hidden');finishNow(x.store,x.id)}
-function confirmEarly(){if(!v32PendingFinish)return;const ta=document.getElementById('earlyFinishReason'), raw=ta.value.trim(), words=raw.split(/\s+/).filter(Boolean);if(!raw){window.showToast?.('سبب الإنهاء إلزامي.');ta.focus();return}if(words.length>15){window.showToast?.('سبب الإنهاء يجب ألا يتجاوز 15 كلمة.');ta.focus();return}const x=v32PendingFinish;document.getElementById('earlyFinishModal')?.classList.add('hidden');v32PendingFinish=null;finishNow(x.store,x.id,raw,x.mode)}
-function eventsForReports(){autoFinishExpiredEvents();return accessibleStores().flatMap(store=>storeRows(store).filter(e=>e.status==='مقبول'&&e.finished&&!hasReport(e,store)).map(e=>({...e,__store:store}))) }
+function confirmEarly(){
+  if(!v32PendingFinish)return;
+  const ta=document.getElementById('earlyFinishReason');
+  const raw=ta?.value.trim()||'';
+  const words=raw.split(/\s+/).filter(Boolean);
+
+  if(!raw){window.showToast?.('ذكر السبب إلزامي.');ta?.focus();return}
+  if(words.length>15){window.showToast?.('السبب يجب ألا يتجاوز 15 كلمة.');ta?.focus();return}
+
+  const x=v32PendingFinish;
+  document.getElementById('earlyFinishModal')?.classList.add('hidden');
+  v32PendingFinish=null;
+
+  if(x.mode==='cancel'){
+    cancelEvent(x.store,x.id,raw);
+  }else{
+    finishNow(x.store,x.id,raw,'early');
+  }
+}
+function eventsForReports(){autoFinishExpiredEvents();return accessibleStores().flatMap(store=>storeRows(store).filter(e=>e.status==='مقبول'&&e.finished&&!e.cancelled&&!hasReport(e,store)).map(e=>({...e,__store:store}))) }
 function populateReportEvents(force=null){const select=document.getElementById('activitySourceEvent');if(!select)return;const current=force?.id||select.value;const rows=eventsForReports();select.innerHTML='<option value="">اختر حدثًا منتهيًا لم يسجل له تقرير بعد</option>'+rows.map(e=>`<option value="${e.id}" data-store="${e.__store}">${e.name} — ${e.date} — ${e.startTime||'09:00'}–${e.endTime||'17:00'} — ${scopeLabel(eventScope(e,e.__store))}</option>`).join('');if(current){select.value=String(current);const opt=select.selectedOptions[0];if(opt)autofillReport(select)}}
 function scopeLabel(s){return s==='sports'?'الشؤون الرياضية':s==='club'?'الأندية الطلابية':s==='volunteer'?'الفرص التطوعية':'المجلس الطلابي'}
 function autofillReport(select){const opt=select.selectedOptions[0];if(!opt?.value)return;const store=opt.dataset.store,row=findEvent(store,opt.value);if(!row)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};set('activityName',row.name);set('activityDate',row.date);set('activityDays',row.days||1);set('activityBeneficiaries',row.expectedBeneficiaries||row.capacity||0);set('activityPlayers',acceptedCount(row.id));set('activityGender',row.gender||'الاثنان معًا');set('activityBudget',row.budget||0);let cat=store===V32.sports?'الأنشطة الرياضية':store===V32.volunteer?'الأنشطة و البرامج المجتمعية و التطوعية':store===V32.council?(row.category||'برامج عامة على مستوى الجامعة'):'برامج عامة على مستوى الجامعة';set('activityEventCategory',cat);const game=row.game||row.type||row.category||'أخرى';set('activityGameType',game);const other=/أخرى|اخرى|رياضة أخرى/.test(game);document.getElementById('activityGameTypeOtherWrap')?.classList.toggle('hidden',!other);const otherInput=document.getElementById('activityGameTypeOther');if(otherInput){otherInput.required=other;if(!other)otherInput.value=''}}
@@ -8324,7 +8464,7 @@ const ex=e.target.closest('[data-participant-export]');if(ex){exportParticipants
   document.getElementById(`${s}EventIndexSearch`)?.addEventListener('input',()=>renderIndex(s));
   document.getElementById(`${s}EventIndexDate`)?.addEventListener('change',()=>renderIndex(s));
 });
-document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!canCreateMore())blockCreateIfNeeded(e)},true)}
+document.addEventListener('click',e=>{const submit=e.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');if(submit&&!submit.closest('form')?.dataset.editEventId)blockCreateIfNeeded(e)},true);document.getElementById('councilActivityForm')?.addEventListener('submit',e=>{if(!e.currentTarget.dataset.editEventId&&!canCreateMore())blockCreateIfNeeded(e)},true)}
 window.v32Refresh=refresh;window.addEventListener('DOMContentLoaded',()=>{bind();migrate();autoFinishExpiredEvents();setTimeout(refresh,250);setInterval(()=>{
   autoFinishExpiredEvents();
   populateReportEvents();
@@ -8717,4 +8857,260 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.documentElement.classList.remove('sah-budget-prehydrate');
   document.documentElement.dataset.sahBuild='32.13';
   console.info('SAH build 32.13: renderBudgetDashboard now uses the authoritative global budget store.');
+});
+
+
+/* ==========================================================
+   SAH V32.14 — edit pending event requests
+   ========================================================== */
+(function(){
+'use strict';
+
+const CONFIG={
+  'sah-v22-sports':{
+    scope:'sports',form:'sportsEventRequestForm',submit:'submitSportsRequest',notice:'sportsEventEditNotice',
+    role:'sports_manager',
+    fields:{
+      name:'sportsReqName',description:'sportsReqDescription',date:'sportsReqDate',days:'sportsReqDays',
+      startTime:'sportsReqStartTime',endTime:'sportsReqEndTime',game:'sportsReqGame',
+      location:'sportsReqLocation',expectedBeneficiaries:'sportsReqParticipants',
+      teams:'sportsReqTeams',universities:'sportsReqUniversities',capacity:'sportsReqCapacity',
+      budget:'sportsReqBudget',gender:'sportsReqGender'
+    },
+    numeric:new Set(['days','expectedBeneficiaries','teams','universities','capacity','budget'])
+  },
+  'sah-v22-club-events':{
+    scope:'club',form:'clubEventRequestForm',submit:'submitClubEventRequest',notice:'clubEventEditNotice',
+    role:'faculty',
+    fields:{
+      club:'clubEventClub',name:'clubEventName',description:'clubEventDescription',date:'clubEventDate',
+      days:'clubEventDays',startTime:'clubEventStartTime',endTime:'clubEventEndTime',
+      location:'clubEventLocation',participants:'clubEventParticipants',supervisor:'clubEventSupervisor',
+      gender:'clubEventGender',capacity:'clubEventCapacity',budget:'clubEventBudget'
+    },
+    numeric:new Set(['days','capacity','budget'])
+  },
+  'sah-v22-vol':{
+    scope:'volunteer',form:'volunteerOpportunityForm',submit:'submitVolunteerOpportunity',notice:'volunteerEventEditNotice',
+    role:'activities_manager',
+    fields:{
+      type:'volunteerType',capacity:'volunteerCapacity',name:'volunteerEventName',
+      description:'volunteerEventDescription',date:'volunteerEventDate',days:'volunteerEventDays',
+      startTime:'volunteerEventStartTime',endTime:'volunteerEventEndTime',
+      sponsor:'volunteerSponsor',owner:'volunteerOwner',location:'volunteerLocation',budget:'volunteerBudget'
+    },
+    numeric:new Set(['capacity','days','budget'])
+  },
+  'sah-v30-council-activities':{
+    scope:'council',form:'councilActivityForm',submit:'submitCouncilActivity',notice:'councilEventEditNotice',
+    role:'student_council',
+    fields:{
+      name:'councilActivityName',description:'councilActivityDescription',category:'councilActivityCategory',
+      date:'councilActivityDate',days:'councilActivityDays',startTime:'councilActivityStartTime',
+      endTime:'councilActivityEndTime',location:'councilActivityLocation',gender:'councilActivityGender',
+      capacity:'councilActivityCapacity',budget:'councilActivityBudget'
+    },
+    numeric:new Set(['days','capacity','budget'])
+  }
+};
+
+function role(){
+  return document.getElementById('activeRole')?.value ||
+         document.getElementById('mobileActiveRole')?.value ||
+         localStorage.getItem('sah-v15-role') || 'system';
+}
+
+function read(key){
+  try{const rows=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(rows)?rows:[]}catch{return []}
+}
+function write(key,rows){localStorage.setItem(key,JSON.stringify(rows))}
+
+function allowed(config){return role()===config.role}
+
+function setField(id,value){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.value=value??'';
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true}));
+}
+
+function beginEdit(store,id){
+  const config=CONFIG[store];
+  if(!config||!allowed(config)){
+    window.showToast?.('لا تملك صلاحية تعديل هذا الطلب.');
+    return;
+  }
+
+  const rows=read(store);
+  const row=rows.find(item=>String(item.id)===String(id));
+  if(!row)return;
+
+  if(row.status!=='تحت المراجعة'){
+    window.showToast?.('يمكن تعديل الطلب فقط قبل الموافقة أو الرفض.');
+    return;
+  }
+
+  const form=document.getElementById(config.form);
+  if(!form)return;
+
+  Object.entries(config.fields).forEach(([prop,inputId])=>{
+    let value=row[prop];
+    if(prop==='expectedBeneficiaries' && value==null)value=row.participants||row.capacity||0;
+    setField(inputId,value);
+  });
+
+  form.dataset.editEventId=String(row.id);
+  form.dataset.editEventStore=store;
+  form.classList.add('event-edit-mode');
+
+  document.getElementById(config.notice)?.classList.remove('hidden');
+  const submit=document.getElementById(config.submit);
+  if(submit)submit.textContent='حفظ التعديلات';
+
+  document.querySelector(`[data-cancel-event-edit="${config.scope}"]`)?.classList.remove('hidden');
+
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>form.querySelector('input,select,textarea')?.focus(),250);
+}
+
+function clearEdit(config,reset=false){
+  const form=document.getElementById(config.form);
+  if(!form)return;
+
+  delete form.dataset.editEventId;
+  delete form.dataset.editEventStore;
+  form.classList.remove('event-edit-mode');
+
+  document.getElementById(config.notice)?.classList.add('hidden');
+  const submit=document.getElementById(config.submit);
+  if(submit){
+    submit.textContent=config.scope==='club'
+      ?'إرسال طلب الفعالية'
+      :config.scope==='council'
+        ?'إرسال النشاط للاعتماد'
+        :'إرسال الطلب';
+  }
+  document.querySelector(`[data-cancel-event-edit="${config.scope}"]`)?.classList.add('hidden');
+
+  if(reset){
+    form.reset();
+    // Restore timing defaults after reset.
+    ['sportsReqDays','clubEventDays','volunteerEventDays','councilActivityDays'].forEach(id=>{
+      const el=document.getElementById(id);if(el&&!el.value)el.value='1';
+    });
+    ['sportsReqStartTime','clubEventStartTime','volunteerEventStartTime','councilActivityStartTime'].forEach(id=>{
+      const el=document.getElementById(id);if(el&&!el.value)el.value='09:00';
+    });
+    ['sportsReqEndTime','clubEventEndTime','volunteerEventEndTime','councilActivityEndTime'].forEach(id=>{
+      const el=document.getElementById(id);if(el&&!el.value)el.value='17:00';
+    });
+  }
+}
+
+function validateTiming(config){
+  const start=document.getElementById(config.fields.startTime)?.value||'';
+  const end=document.getElementById(config.fields.endTime)?.value||'';
+  const days=Math.max(1,Number(document.getElementById(config.fields.days)?.value)||1);
+  return days>1 || end>start;
+}
+
+function saveEdit(config,form){
+  const id=form.dataset.editEventId;
+  const store=form.dataset.editEventStore;
+  if(!id||!store)return false;
+
+  if(!allowed(config)){
+    window.showToast?.('لا تملك صلاحية حفظ تعديل هذا الطلب.');
+    return true;
+  }
+  if(!form.reportValidity())return true;
+  if(!validateTiming(config)){
+    window.showToast?.('وقت انتهاء الحدث يجب أن يكون بعد وقت البداية.');
+    return true;
+  }
+
+  const rows=read(store);
+  const row=rows.find(item=>String(item.id)===String(id));
+  if(!row)return true;
+
+  if(row.status!=='تحت المراجعة'){
+    window.showToast?.('تم اتخاذ قرار على الطلب، لذلك لم يعد قابلًا للتعديل.');
+    clearEdit(config,false);
+    return true;
+  }
+
+  Object.entries(config.fields).forEach(([prop,inputId])=>{
+    const el=document.getElementById(inputId);
+    if(!el)return;
+    row[prop]=config.numeric.has(prop)?Number(el.value)||0:String(el.value??'').trim();
+  });
+
+  if(config.scope==='sports'){
+    row.participants=row.expectedBeneficiaries;
+  }
+
+  row.updatedAt=new Date().toISOString();
+  row.lastEditedBy=role();
+
+  write(store,rows);
+  clearEdit(config,true);
+
+  window.renderAll?.();
+  window.v32Refresh?.();
+  window.showToast?.('تم حفظ تعديلات الطلب وهو ما زال قيد المراجعة.');
+  return true;
+}
+
+document.addEventListener('click',event=>{
+  const edit=event.target.closest('.edit-pending-event-btn');
+  if(edit){
+    event.preventDefault();
+    event.stopPropagation();
+    beginEdit(edit.dataset.editEventStore,edit.dataset.editEventId);
+    return;
+  }
+
+  const cancel=event.target.closest('[data-cancel-event-edit]');
+  if(cancel){
+    event.preventDefault();
+    const config=Object.values(CONFIG).find(item=>item.scope===cancel.dataset.cancelEventEdit);
+    if(config)clearEdit(config,true);
+    return;
+  }
+
+  const submit=event.target.closest('#submitSportsRequest,#submitClubEventRequest,#submitVolunteerOpportunity');
+  if(submit){
+    const config=Object.values(CONFIG).find(item=>item.submit===submit.id);
+    const form=config?document.getElementById(config.form):null;
+    if(config&&form?.dataset.editEventId){
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      saveEdit(config,form);
+    }
+  }
+},true);
+
+document.addEventListener('submit',event=>{
+  if(event.target?.id!=='councilActivityForm')return;
+  const config=CONFIG['sah-v30-council-activities'];
+  if(event.target.dataset.editEventId){
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    saveEdit(config,event.target);
+  }
+},true);
+
+window.SAH_EVENT_EDIT={begin:beginEdit,cancel:scope=>{
+  const config=Object.values(CONFIG).find(item=>item.scope===scope);
+  if(config)clearEdit(config,true);
+}};
+
+})();
+
+window.addEventListener('DOMContentLoaded',()=>{
+  document.documentElement.dataset.sahBuild='32.14';
+  console.info('SAH build 32.14 event cancel / early end / pending edit loaded');
 });

@@ -14509,3 +14509,98 @@ body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
 #generalAnnualBudgetCard #generalAnnualBudgetCaption{
   padding-bottom:40px!important;
 }
+
+
+/* ==========================================================
+   SAH V32.14 — cancellation / early-end / pending edit
+   ========================================================== */
+.event-row-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  flex-wrap:wrap!important;
+  gap:6px!important;
+}
+
+.edit-pending-event-btn{
+  min-height:28px!important;
+  padding:5px 10px!important;
+  border:1px solid #b8cbe3!important;
+  border-radius:9px!important;
+  background:#f7faff!important;
+  color:#0b55d9!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+}
+
+.edit-pending-event-btn:hover{
+  background:#eef4ff!important;
+}
+
+.event-cancelled-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:27px!important;
+  padding:5px 10px!important;
+  border-radius:999px!important;
+  background:#fff0f2!important;
+  color:#a72e43!important;
+  border:1px solid #f1cbd2!important;
+  font-size:8px!important;
+  font-weight:950!important;
+}
+
+.event-edit-notice{
+  grid-column:1/-1!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  padding:12px 14px!important;
+  border:1px solid #cbdcf1!important;
+  border-radius:13px!important;
+  background:#f2f7ff!important;
+  color:#123c70!important;
+}
+
+.event-edit-notice.hidden{display:none!important;}
+
+.event-edit-notice strong{
+  font-size:10px!important;
+  font-weight:950!important;
+}
+.event-edit-notice span{
+  font-size:8px!important;
+  color:#64758c!important;
+}
+
+.event-edit-mode{
+  border-radius:14px!important;
+  box-shadow:inset 0 0 0 2px rgba(11,85,217,.08)!important;
+}
+
+.cancel-event-edit{
+  margin-inline-end:6px!important;
+}
+
+#earlyFinishModal .early-finish-modal-card{
+  border-top:4px solid #ad2348!important;
+}
+
+#earlyFinishActionLabel{
+  pointer-events:none!important;
+}
+
+.student-event-ended-status.cancelled .event-cancelled{
+  background:#fff0f2!important;
+  color:#a72e43!important;
+}
+
+@media(max-width:720px){
+  .event-edit-notice{
+    align-items:flex-start!important;
+    flex-direction:column!important;
+  }
+}
