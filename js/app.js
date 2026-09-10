@@ -1290,6 +1290,7 @@ window.addEventListener('DOMContentLoaded',initPreferences);
     recalculateAllExistingActivities();
     closeModal('fieldPointsCalculatorModal');
     updateActivityPointsPreview();
+    window.dispatchEvent(new CustomEvent('sah:points-calculator-updated'));
     showToast('تم حفظ الحاسبة وإعادة جدولة نقاط جميع الأنشطة السابقة.');
   }
 
@@ -1318,11 +1319,27 @@ window.addEventListener('DOMContentLoaded',initPreferences);
 
   function calculateActivityPoints(activity) {
     const calculator = loadFieldCalculator();
-    const p = calculator.subfields?.[activity.subField] || {
-      guest:0,guestMax:0,
-      host:0,hostMax:0,
-      university:0,universityMax:0,
-      player:0,playerMax:0
+    const mainField=String(
+      activity.mainField ||
+      activity.indicatorField ||
+      activity.field ||
+      activity.subCategory ||
+      ''
+    ).trim();
+    const subField=String(activity.subField||'').trim();
+
+    const sub=calculator.subfields?.[subField]||null;
+    const main=calculator.fields?.[mainField]||{guest:0,host:0};
+
+    const p=sub || {
+      guest:Number(main.guest)||Number(calculator.guestParticipation)||0,
+      guestMax:0,
+      host:Number(main.host)||Number(calculator.hostParticipation)||0,
+      hostMax:0,
+      university:Number(calculator.university)||0,
+      universityMax:0,
+      player:Number(calculator.player)||0,
+      playerMax:0
     };
 
     const cap=(value,max)=>{
@@ -2010,13 +2027,54 @@ window.addEventListener('DOMContentLoaded',initPreferences);
 
   function updateActivityPointsPreview() {
     const activity = {
+      mainField: document.getElementById('activityIndicatorField')?.value || '',
       indicatorField: document.getElementById('activityIndicatorField')?.value || '',
+      subField: document.getElementById('activitySubField')?.value || '',
       participationType: document.getElementById('activityParticipationType')?.value || 'guest',
       universities: Number(document.getElementById('activityUniversities')?.value || 0),
       players: Number(document.getElementById('activityPlayers')?.value || 0)
     };
     setText('#activityCalculatedPoints', fmt(calculateActivityPoints(activity)));
   }
+
+  function syncActivityPointsFromSource(sourceRow={}){
+    const searchText=[
+      sourceRow.game,
+      sourceRow.type,
+      sourceRow.category,
+      sourceRow.name
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    const subfields=loadSubFields();
+    let match=subfields.find(item=>{
+      const name=String(item.name||'').toLowerCase();
+      return name && (searchText.includes(name)||name.includes(searchText));
+    });
+
+    if(!match && sourceRow.subField){
+      match=subfields.find(item=>item.name===sourceRow.subField);
+    }
+
+    if(match){
+      setInput('activityIndicatorField',match.mainField||'');
+      populateActivitySubFields(match.name);
+      setInput('activitySubField',match.name);
+    }else if(sourceRow.mainField||sourceRow.indicatorField){
+      const main=sourceRow.mainField||sourceRow.indicatorField;
+      setInput('activityIndicatorField',main);
+      populateActivitySubFields(sourceRow.subField||'');
+      if(sourceRow.subField)setInput('activitySubField',sourceRow.subField);
+    }
+
+    if(sourceRow.participationType){
+      setInput('activityParticipationType',sourceRow.participationType);
+    }
+
+    updateActivityPointsPreview();
+  }
+
+  window.SAH_UPDATE_ACTIVITY_POINTS=updateActivityPointsPreview;
+  window.SAH_SYNC_ACTIVITY_POINTS_FROM_SOURCE=syncActivityPointsFromSource;
 
   function recalculateIndicator() {
     const fields = SAH_DATA.indicatorFields || [];
@@ -2464,8 +2522,13 @@ window.addEventListener('DOMContentLoaded',initPreferences);
 
     ['activityIndicatorField', 'activitySubField', 'activityParticipationType',
      'activityUniversities', 'activityPlayers']
-      .forEach(id => document.getElementById(id)
-        ?.addEventListener('input', updateActivityPointsPreview));
+      .forEach(id => {
+        const element=document.getElementById(id);
+        element?.addEventListener('input', updateActivityPointsPreview);
+        element?.addEventListener('change', updateActivityPointsPreview);
+      });
+
+    window.addEventListener('sah:points-calculator-updated',updateActivityPointsPreview);
 
     ['evidenceSearch', 'evidenceColumnFilter',
      'evidenceCompletionFilter', 'evidenceStatus']
@@ -3600,7 +3663,40 @@ function allReq(){return[
  ...R(K.grants).filter(x=>x.status==='محال للعمادة'||x.status==='معتمد نهائيًا'||x.status==='مرفوض من العمادة')
    .map(x=>({...x,store:K.grants,kind:'طلب اعتماد منحة رياضية',name:x.name,date:x.submittedAt,gender:x.gender}))
 ]}
-function push(k,o){const a=R(k);a.push(o);W(k,a);renderAll();showToast?.('تم إرسال الطلب وحالته تحت المراجعة.')}
+function push(k,o){
+  const a=R(k);
+  a.push(o);
+  W(k,a);
+  renderAll();
+
+  const eventForms={
+    [K.sports]:'sportsEventRequestForm',
+    [K.clubEvents]:'clubEventRequestForm',
+    [K.vol]:'volunteerOpportunityForm'
+  };
+
+  const formId=eventForms[k];
+  if(formId){
+    const form=document.getElementById(formId);
+    form?.reset();
+
+    // Restore event timing defaults after reset.
+    const defaults={
+      sportsEventRequestForm:['sportsReqDays','sportsReqStartTime','sportsReqEndTime'],
+      clubEventRequestForm:['clubEventDays','clubEventStartTime','clubEventEndTime'],
+      volunteerOpportunityForm:['volunteerEventDays','volunteerEventStartTime','volunteerEventEndTime']
+    }[formId]||[];
+
+    const [daysId,startId,endId]=defaults;
+    if(daysId&&document.getElementById(daysId))document.getElementById(daysId).value='1';
+    if(startId&&document.getElementById(startId))document.getElementById(startId).value='09:00';
+    if(endId&&document.getElementById(endId))document.getElementById(endId).value='17:00';
+
+    window.SAH_SHOW_EVENT_SUBMISSION_SUCCESS?.(o?.name||'الحدث');
+  }else{
+    showToast?.('تم إرسال الطلب وحالته تحت المراجعة.');
+  }
+}
 function evidence(){return window.getFilteredEvidence?window.getFilteredEvidence():(window.SAH_DATA?.evidenceRecords||[])}
 
 function renderCategory(c){
@@ -7569,7 +7665,7 @@ function bindV30(){
     writeV30(V30.councilActivities,rows);
     event.currentTarget.reset();
     window.renderAll?.();
-    window.showToast?.('تم إرسال نشاط المجلس إلى عمادة شؤون الطلاب للمراجعة.');
+    window.SAH_SHOW_EVENT_SUBMISSION_SUCCESS?.(rows[0]?.name||'نشاط المجلس الطلابي');
   });
 
   document.getElementById('councilMeetingForm')?.addEventListener('submit',event=>{
@@ -8392,7 +8488,53 @@ function confirmEarly(){
 function eventsForReports(){autoFinishExpiredEvents();return accessibleStores().flatMap(store=>storeRows(store).filter(e=>e.status==='مقبول'&&e.finished&&!e.cancelled&&!hasReport(e,store)).map(e=>({...e,__store:store}))) }
 function populateReportEvents(force=null){const select=document.getElementById('activitySourceEvent');if(!select)return;const current=force?.id||select.value;const rows=eventsForReports();select.innerHTML='<option value="">اختر حدثًا منتهيًا لم يسجل له تقرير بعد</option>'+rows.map(e=>`<option value="${e.id}" data-store="${e.__store}">${e.name} — ${e.date} — ${e.startTime||'09:00'}–${e.endTime||'17:00'} — ${scopeLabel(eventScope(e,e.__store))}</option>`).join('');if(current){select.value=String(current);const opt=select.selectedOptions[0];if(opt)autofillReport(select)}}
 function scopeLabel(s){return s==='sports'?'الشؤون الرياضية':s==='club'?'الأندية الطلابية':s==='volunteer'?'الفرص التطوعية':'المجلس الطلابي'}
-function autofillReport(select){const opt=select.selectedOptions[0];if(!opt?.value)return;const store=opt.dataset.store,row=findEvent(store,opt.value);if(!row)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};set('activityName',row.name);set('activityDate',row.date);set('activityDays',row.days||1);set('activityBeneficiaries',row.expectedBeneficiaries||row.capacity||0);set('activityPlayers',acceptedCount(row.id));set('activityGender',row.gender||'الاثنان معًا');set('activityBudget',row.budget||0);let cat=store===V32.sports?'الأنشطة الرياضية':store===V32.volunteer?'الأنشطة و البرامج المجتمعية و التطوعية':store===V32.council?(row.category||'برامج عامة على مستوى الجامعة'):'برامج عامة على مستوى الجامعة';set('activityEventCategory',cat);const game=row.game||row.type||row.category||'أخرى';set('activityGameType',game);const other=/أخرى|اخرى|رياضة أخرى/.test(game);document.getElementById('activityGameTypeOtherWrap')?.classList.toggle('hidden',!other);const otherInput=document.getElementById('activityGameTypeOther');if(otherInput){otherInput.required=other;if(!other)otherInput.value=''}}
+function autofillReport(select){
+  const opt=select.selectedOptions[0];
+  if(!opt?.value)return;
+  const store=opt.dataset.store,row=findEvent(store,opt.value);
+  if(!row)return;
+
+  const set=(id,v)=>{
+    const e=document.getElementById(id);
+    if(!e)return;
+    e.value=v??'';
+    e.dispatchEvent(new Event('input',{bubbles:true}));
+    e.dispatchEvent(new Event('change',{bubbles:true}));
+  };
+
+  set('activityName',row.name);
+  set('activityDate',row.date);
+  set('activityDays',row.days||1);
+  set('activityBeneficiaries',row.expectedBeneficiaries||row.capacity||0);
+  set('activityPlayers',acceptedCount(row.id));
+  set('activityGender',row.gender||'الاثنان معًا');
+  set('activityBudget',row.budget||0);
+
+  let cat=store===V32.sports
+    ?'الأنشطة الرياضية'
+    :store===V32.volunteer
+      ?'الأنشطة و البرامج المجتمعية و التطوعية'
+      :store===V32.council
+        ?(row.category||'برامج عامة على مستوى الجامعة')
+        :'برامج عامة على مستوى الجامعة';
+  set('activityEventCategory',cat);
+
+  const game=row.game||row.type||row.category||'أخرى';
+  set('activityGameType',game);
+
+  const other=/أخرى|اخرى|رياضة أخرى/.test(game);
+  document.getElementById('activityGameTypeOtherWrap')?.classList.toggle('hidden',!other);
+  const otherInput=document.getElementById('activityGameTypeOther');
+  if(otherInput){
+    otherInput.required=other;
+    if(!other)otherInput.value='';
+  }
+
+  // Synchronize with the exact calculator configuration saved by the
+  // Sports KPI Officer, including main/sub field and current point values.
+  window.SAH_SYNC_ACTIVITY_POINTS_FROM_SOURCE?.(row);
+  window.SAH_UPDATE_ACTIVITY_POINTS?.();
+}
 function reportBadgeFor(row,store){return window.v32ReportBadge(row,store)}
 function eventList(scope){
   const store=scope==='sports'?V32.sports:scope==='club'?V32.club:scope==='volunteer'?V32.volunteer:V32.council;
@@ -9188,3 +9330,34 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.documentElement.dataset.sahBuild='32.16';
   console.info('SAH build 32.16 event submissions fixed and 3-day rule removed');
 });
+
+
+/* ==========================================================
+   SAH V32.17 — professional event submission confirmation
+   ========================================================== */
+(function(){
+  function close(){
+    document.getElementById('eventSubmissionSuccessModal')?.classList.add('hidden');
+  }
+
+  window.SAH_SHOW_EVENT_SUBMISSION_SUCCESS=function(eventName='الحدث'){
+    const modal=document.getElementById('eventSubmissionSuccessModal');
+    const message=document.getElementById('eventSubmissionSuccessMessage');
+    if(message){
+      message.textContent=`تم إرسال «${eventName}» بنجاح إلى مسار المراجعة والاعتماد.`;
+    }
+    modal?.classList.remove('hidden');
+  };
+
+  document.addEventListener('click',event=>{
+    if(event.target.closest('[data-close-event-submit-success]')){
+      event.preventDefault();
+      close();
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    document.documentElement.dataset.sahBuild='32.17';
+    console.info('SAH build 32.17 confirmation modal, closed cards, budget header and points sync loaded');
+  });
+})();
