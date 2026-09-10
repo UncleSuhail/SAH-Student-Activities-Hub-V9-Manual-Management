@@ -9361,3 +9361,103 @@ window.addEventListener('DOMContentLoaded',()=>{
     console.info('SAH build 32.17 confirmation modal, closed cards, budget header and points sync loaded');
   });
 })();
+
+
+/* ==========================================================
+   SAH V32.18 — Add Activity automatic/manual entry controller
+   ========================================================== */
+(function(){
+  'use strict';
+
+  const AUTO_READONLY_IDS=[
+    'activityName','activityDate','activityDays','activityBeneficiaries',
+    'activityPlayers','activityGameType','activityBudget'
+  ];
+
+  function form(){return document.getElementById('addActivityForm')}
+
+  function setMode(mode,{clear=true}={}){
+    const f=form();
+    if(!f)return;
+    const manual=mode==='manual';
+    f.dataset.activityEntryMode=manual?'manual':'auto';
+    f.classList.toggle('activity-entry-manual-mode',manual);
+    f.classList.toggle('activity-entry-auto-mode',!manual);
+    const hidden=document.getElementById('activityEntryMode');
+    if(hidden)hidden.value=manual?'manual':'auto';
+
+    document.querySelectorAll('[data-activity-entry-mode]').forEach(button=>{
+      button.classList.toggle('active',button.dataset.activityEntryMode===(manual?'manual':'auto'));
+      button.setAttribute('aria-pressed',button.classList.contains('active')?'true':'false');
+    });
+
+    const sourceWrap=document.querySelector('.activity-source-event-field');
+    const source=document.getElementById('activitySourceEvent');
+    sourceWrap?.classList.toggle('manual-mode-hidden',manual);
+    if(source){
+      source.required=!manual;
+      source.disabled=manual;
+      if(manual)source.value='';
+    }
+
+    AUTO_READONLY_IDS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      if(manual)el.removeAttribute('readonly');
+      else el.setAttribute('readonly','');
+    });
+
+    const note=document.getElementById('activityEntryModeNote');
+    if(note){
+      note.innerHTML=manual
+        ? '<strong>التعبئة اليدوية مفعلة</strong><span>أدخل بيانات النشاط يدويًا. احتساب النقاط يبقى متزامنًا مع حاسبة مسؤول مؤشر الأداء الرياضي.</span>'
+        : '<strong>التعبئة التلقائية مفعلة</strong><span>اختر حدثًا منتهيًا وسيتم جلب بياناته تلقائيًا، مع احتساب النقاط حسب حاسبة مسؤول المؤشر.</span>';
+    }
+
+    if(clear){
+      if(manual){
+        AUTO_READONLY_IDS.forEach(id=>{
+          const el=document.getElementById(id); if(!el)return;
+          if(['activityDays'].includes(id))el.value='1';
+          else if(['activityBeneficiaries','activityPlayers','activityBudget'].includes(id))el.value='0';
+          else el.value='';
+        });
+        const other=document.getElementById('activityGameTypeOther'); if(other)other.value='';
+        window.SAH_UPDATE_ACTIVITY_POINTS?.();
+      }else{
+        window.v32Refresh?.();
+        const selected=document.getElementById('activitySourceEvent');
+        if(selected?.value)selected.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+  }
+
+  function resetToAuto(){setMode('auto',{clear:false})}
+
+  document.addEventListener('click',event=>{
+    const button=event.target.closest('[data-activity-entry-mode]');
+    if(!button)return;
+    event.preventDefault();
+    event.stopPropagation();
+    setMode(button.dataset.activityEntryMode,{clear:true});
+  },true);
+
+  document.getElementById('openAddActivity')?.addEventListener('click',()=>{
+    setTimeout(()=>resetToAuto(),20);
+  });
+
+  document.querySelectorAll('[data-close-add-activity]').forEach(button=>{
+    button.addEventListener('click',()=>setTimeout(resetToAuto,300));
+  });
+
+  window.SAH_ACTIVITY_ENTRY_MODE={set:setMode,get:()=>form()?.dataset.activityEntryMode||'auto'};
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>setMode('auto',{clear:false}),{once:true});
+  }else setMode('auto',{clear:false});
+})();
+
+window.addEventListener('DOMContentLoaded',()=>{
+  document.documentElement.dataset.sahBuild='32.18';
+  console.info('SAH build 32.18 manual/automatic Add Activity and early modal polish loaded');
+});

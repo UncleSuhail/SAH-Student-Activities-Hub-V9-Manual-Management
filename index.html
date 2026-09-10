@@ -66,7 +66,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 }
 </style>
 
-<link href="css/style.css?v=32.17" rel="stylesheet"/>
+<link href="css/style.css?v=32.18" rel="stylesheet"/>
 <style id="sah-mobile-critical-v201">
 @media (max-width:1100px){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
@@ -130,7 +130,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 }
 </style>
 </head>
-<body class="login-mode" data-sah-version="32.17">
+<body class="login-mode" data-sah-version="32.18">
 <section class="login-page" id="login">
 <div class="login-bg"></div>
 <div class="login-card">
@@ -2168,15 +2168,24 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <div aria-labelledby="addActivityTitle" aria-modal="true" class="modal activity-entry-modal hidden" id="addActivityModal" role="dialog">
 <div class="modal-backdrop" data-close-add-activity=""></div>
 <div class="modal-card activity-modal-card">
-<div class="section-title compact-title">
-<div>
+<div class="section-title compact-title activity-entry-heading">
+<div class="activity-entry-heading-copy">
 <h3 id="addActivityTitle">إضافة نشاط جديد</h3>
 <p>تُحسب النقاط تلقائيًا حسب المجال والفئة ونوع المشاركة، ثم تُضاف مباشرة إلى مؤشر الطلاب أو الطالبات.</p>
 </div>
-<button class="btn outline" data-close-add-activity="" type="button">إغلاق</button>
+<div class="activity-entry-mode-switch" aria-label="طريقة تعبئة النشاط">
+<button class="activity-entry-mode-btn active" data-activity-entry-mode="auto" type="button">تعبئة تلقائية</button>
+<button class="activity-entry-mode-btn" data-activity-entry-mode="manual" type="button">تعبئة يدوية</button>
 </div>
-<form class="activity-form" id="addActivityForm">
-<input id="activityEditKey" type="hidden" value=""/><label class="activity-source-event-field full-width-field"><span>الحدث المرتبط بالتقرير</span><select id="activitySourceEvent" required=""><option value="">اختر حدثًا لم يسجل له تقرير بعد</option></select><small>تظهر فقط الأحداث المتاحة حسب صلاحية حسابك والتي لم يسجل لها تقرير.</small></label>
+<button class="btn outline activity-entry-close" data-close-add-activity="" type="button">إغلاق</button>
+</div>
+<form class="activity-form activity-entry-auto-mode" data-activity-entry-mode="auto" id="addActivityForm">
+<input id="activityEditKey" type="hidden" value=""/>
+<input id="activityEntryMode" type="hidden" value="auto"/>
+<div class="activity-entry-mode-note full-width-field" id="activityEntryModeNote">
+  <strong>التعبئة التلقائية مفعلة</strong>
+  <span>اختر حدثًا منتهيًا وسيتم جلب بياناته تلقائيًا، مع احتساب النقاط حسب حاسبة مسؤول المؤشر.</span>
+</div><label class="activity-source-event-field full-width-field"><span>الحدث المرتبط بالتقرير</span><select id="activitySourceEvent" required=""><option value="">اختر حدثًا لم يسجل له تقرير بعد</option></select><small>تظهر فقط الأحداث المتاحة حسب صلاحية حسابك والتي لم يسجل لها تقرير.</small></label>
 <label><span>اسم النشاط</span><input id="activityName" readonly="" required=""/></label>
 <label><span>التاريخ</span><input id="activityDate" readonly="" required="" type="date"/></label>
 <label><span>عدد الأيام</span><input id="activityDays" min="1" readonly="" required="" type="number" value="1"/></label>
@@ -2239,7 +2248,7 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 </div>
 <script src="js/data.js?v=22.0"></script>
 <script src="js/admin.js?v=22.0"></script>
-<script src="js/app.js?v=32.17"></script>
+<script src="js/app.js?v=32.18"></script>
 <div aria-modal="true" class="modal hidden" id="finishEventModal" role="dialog">
 <div class="modal-backdrop" data-close-finish-event=""></div>
 <div class="modal-card university-confirm-modal finish-event-modern-modal"><div class="finish-event-confirm-shell">
@@ -2290,7 +2299,34 @@ html.sah-budget-prehydrate #generalAnnualBudgetCaption{
 <label class="annual-budget-field"><span>الميزانية السنوية الكاملة (ر.س)</span><input id="annualBudgetInput" min="0" placeholder="مثال: 500000" step="1000" type="number"/></label>
 <div class="annual-budget-modal-actions"><button class="btn outline" data-close-annual-budget="" type="button">إلغاء</button><button class="btn primary" id="saveAnnualBudget" type="button">حفظ وتحديث الميزانية</button></div>
 </div>
-</div><div aria-modal="true" class="modal hidden" id="reportRequiredModal" role="dialog"><div class="modal-backdrop" data-close-report-required=""></div><div class="modal-card report-required-modal-card"><div class="report-required-brand"><strong>UBT</strong><span>Student Activities Platform</span></div><div class="report-required-icon">!</div><h3>يجب تسجيل تقرير الحدث أولًا</h3><p id="reportRequiredMessage">لا يمكن إنهاء الحدث قبل ربطه بتقرير في صفحة التقارير والتحليلات.</p><div class="report-required-steps"><span>1</span><p>انتقل إلى التقارير والتحليلات.</p><span>2</span><p>اختر «إضافة نشاط» وسيتم تحديد الحدث تلقائيًا حسب صلاحيتك.</p><span>3</span><p>أكمل ملفات التقرير والتوثيق ثم عد لإنهاء الحدث.</p></div><div class="modal-actions centered"><button class="btn outline" data-close-report-required="" type="button">إلغاء</button><button class="btn primary" id="goToEventReport" type="button">الانتقال إلى إضافة نشاط</button></div></div></div><div aria-modal="true" class="modal hidden" id="earlyFinishModal" role="dialog"><div class="modal-backdrop" data-close-early-finish=""></div><div class="modal-card early-finish-modal-card"><div class="early-finish-brand"><span>UBT</span><div><strong id="earlyFinishModalHeading">إجراء على الحدث</strong><small>Student Activities Platform</small></div></div><div class="early-finish-warning">!</div><h3 id="earlyFinishModalTitle">هل أنت متأكد؟</h3><p id="earlyFinishDescription">يتم إنهاء هذا الحدث قبل موعده المسجل.</p><label><span id="earlyFinishReasonLabel">سبب عدم بدء الحدث</span><textarea data-word-limit="15" id="earlyFinishReason" placeholder="اكتب السبب بحد أقصى 15 كلمة" rows="4"></textarea><small><b id="earlyFinishWordCount">0</b> / 15 كلمة</small></label><div class="modal-actions centered"><button class="btn outline" data-close-early-finish="" type="button">إلغاء</button><button class="btn danger" id="confirmEarlyFinish" type="button"><span id="earlyFinishActionLabel">تأكيد الإجراء</span></button></div></div></div>
+</div><div aria-modal="true" class="modal hidden" id="reportRequiredModal" role="dialog"><div class="modal-backdrop" data-close-report-required=""></div><div class="modal-card report-required-modal-card"><div class="report-required-brand"><strong>UBT</strong><span>Student Activities Platform</span></div><div class="report-required-icon">!</div><h3>يجب تسجيل تقرير الحدث أولًا</h3><p id="reportRequiredMessage">لا يمكن إنهاء الحدث قبل ربطه بتقرير في صفحة التقارير والتحليلات.</p><div class="report-required-steps"><span>1</span><p>انتقل إلى التقارير والتحليلات.</p><span>2</span><p>اختر «إضافة نشاط» وسيتم تحديد الحدث تلقائيًا حسب صلاحيتك.</p><span>3</span><p>أكمل ملفات التقرير والتوثيق ثم عد لإنهاء الحدث.</p></div><div class="modal-actions centered"><button class="btn outline" data-close-report-required="" type="button">إلغاء</button><button class="btn primary" id="goToEventReport" type="button">الانتقال إلى إضافة نشاط</button></div></div></div><div aria-modal="true" class="modal hidden" id="earlyFinishModal" role="dialog">
+  <div class="modal-backdrop" data-close-early-finish=""></div>
+  <div class="modal-card early-finish-modal-card">
+    <div class="early-finish-head">
+      <div class="early-finish-brandline">
+        <div class="early-finish-brandtext">
+          <small>Student Activities Platform</small>
+          <strong id="earlyFinishModalHeading">إجراء على الحدث</strong>
+        </div>
+        <span class="early-finish-ubt">UBT</span>
+      </div>
+    </div>
+    <div class="early-finish-body">
+      <div class="early-finish-warning">!</div>
+      <h3 id="earlyFinishModalTitle">هل أنت متأكد؟</h3>
+      <p id="earlyFinishDescription">يتم إنهاء هذا الحدث قبل موعده المسجل.</p>
+      <label class="early-finish-field">
+        <span id="earlyFinishReasonLabel">سبب عدم بدء الحدث</span>
+        <textarea data-word-limit="15" id="earlyFinishReason" placeholder="اكتب السبب بحد أقصى 15 كلمة" rows="4"></textarea>
+        <small class="early-finish-counter"><b id="earlyFinishWordCount">0</b> / 15 كلمة</small>
+      </label>
+      <div class="early-finish-actions">
+        <button class="btn ghost" data-close-early-finish="" type="button">إلغاء</button>
+        <button class="btn danger" id="confirmEarlyFinish" type="button"><span id="earlyFinishActionLabel">تأكيد الإجراء</span></button>
+      </div>
+    </div>
+  </div>
+</div>
 <div aria-modal="true" class="modal hidden" id="eventSubmissionSuccessModal" role="dialog">
   <div class="modal-backdrop" data-close-event-submit-success=""></div>
   <div class="modal-card event-submit-success-card">

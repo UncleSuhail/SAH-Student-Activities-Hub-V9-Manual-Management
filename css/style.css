@@ -14838,3 +14838,139 @@ body:not([data-active-role="dean"]) #openAnnualBudgetEditor[hidden]{
   justify-content:flex-end!important;
   padding:0 22px 22px!important;
 }
+
+
+/* ==========================================================
+   SAH V32.18 — Add Activity mode switch
+   ========================================================== */
+#addActivityModal .activity-entry-heading{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto auto!important;
+  align-items:center!important;
+  gap:14px!important;
+}
+#addActivityModal .activity-entry-heading-copy{min-width:0!important;}
+#addActivityModal .activity-entry-mode-switch{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:4px!important;
+  border:1px solid #d4dfec!important;
+  border-radius:14px!important;
+  background:#f3f7fb!important;
+  box-shadow:inset 0 1px 2px rgba(7,44,100,.04)!important;
+}
+#addActivityModal .activity-entry-mode-btn{
+  min-height:38px!important;
+  padding:8px 13px!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#617086!important;
+  font-family:inherit!important;
+  font-size:9px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  cursor:pointer!important;
+}
+#addActivityModal .activity-entry-mode-btn.active{
+  background:#072c64!important;
+  color:#fff!important;
+  box-shadow:0 5px 12px rgba(7,44,100,.15)!important;
+}
+#addActivityModal .activity-entry-mode-note{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:14px!important;
+  padding:12px 14px!important;
+  border:1px solid #dbe5f0!important;
+  border-radius:14px!important;
+  background:#f8fbff!important;
+}
+#addActivityModal .activity-entry-mode-note strong{color:#072c64!important;font-size:9px!important;font-weight:950!important;}
+#addActivityModal .activity-entry-mode-note span{color:#65758a!important;font-size:8px!important;line-height:1.6!important;}
+#addActivityModal .activity-source-event-field.manual-mode-hidden{display:none!important;}
+#addActivityModal .activity-entry-manual-mode input:not([type="file"]):not([type="hidden"]),
+#addActivityModal .activity-entry-manual-mode select,
+#addActivityModal .activity-entry-manual-mode textarea{
+  background:#fff!important;
+}
+#addActivityModal .activity-entry-manual-mode input[readonly]{background:#f6f8fb!important;}
+#addActivityModal .activity-entry-auto-mode #activityName,
+#addActivityModal .activity-entry-auto-mode #activityDate,
+#addActivityModal .activity-entry-auto-mode #activityDays,
+#addActivityModal .activity-entry-auto-mode #activityBeneficiaries,
+#addActivityModal .activity-entry-auto-mode #activityPlayers,
+#addActivityModal .activity-entry-auto-mode #activityGameType,
+#addActivityModal .activity-entry-auto-mode #activityBudget{
+  background:#f3f6fa!important;
+  color:#5f6f82!important;
+}
+
+/* ==========================================================
+   SAH V32.18 — early cancel / early finish modal polish
+   ========================================================== */
+#earlyFinishModal .early-finish-modal-card{
+  width:min(690px,calc(100vw - 28px))!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border-radius:28px!important;
+  border:1px solid #dbe5f1!important;
+  border-top:4px solid #ad2348!important;
+  background:#fff!important;
+  box-shadow:0 28px 70px rgba(7,44,100,.20)!important;
+}
+#earlyFinishModal .early-finish-head{padding:18px 18px 0!important;}
+#earlyFinishModal .early-finish-brandline{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;
+  min-width:0!important;padding:18px 20px!important;border-radius:20px!important;
+  background:linear-gradient(135deg,#072c64,#0b55d9)!important;
+}
+#earlyFinishModal .early-finish-brandtext{min-width:0!important;flex:1 1 auto!important;display:flex!important;flex-direction:column!important;gap:4px!important;}
+#earlyFinishModal .early-finish-brandtext small,#earlyFinishModal .early-finish-brandtext strong,#earlyFinishModal .early-finish-ubt{color:#fff!important;}
+#earlyFinishModal .early-finish-brandtext small{font-size:10px!important;line-height:1.35!important;opacity:.88!important;}
+#earlyFinishModal .early-finish-brandtext strong{font-size:20px!important;line-height:1.3!important;font-weight:950!important;word-break:normal!important;overflow-wrap:anywhere!important;}
+#earlyFinishModal .early-finish-ubt{
+  flex:0 0 auto!important;display:grid!important;place-items:center!important;min-width:64px!important;height:52px!important;
+  padding:0 12px!important;border-radius:16px!important;background:rgba(255,255,255,.14)!important;
+  border:1px solid rgba(255,255,255,.18)!important;font-size:17px!important;font-weight:950!important;
+}
+#earlyFinishModal .early-finish-body{padding:24px 28px 28px!important;}
+#earlyFinishModal .early-finish-warning{
+  width:62px!important;height:62px!important;margin:0 auto 14px!important;border-radius:50%!important;display:grid!important;place-items:center!important;
+  background:#fff2d9!important;border:1px solid #f0d28d!important;color:#a76f00!important;font-size:31px!important;font-weight:950!important;
+}
+#earlyFinishModal .early-finish-modal-card h3{margin:0 0 9px!important;text-align:center!important;color:#072c64!important;font-size:22px!important;line-height:1.35!important;}
+#earlyFinishModal #earlyFinishDescription{margin:0 auto 18px!important;max-width:92%!important;text-align:center!important;color:#57697f!important;font-size:11px!important;line-height:1.8!important;}
+#earlyFinishModal .early-finish-field{display:grid!important;gap:9px!important;margin:0!important;}
+#earlyFinishModal .early-finish-field>span{color:#0c3269!important;font-size:11px!important;font-weight:900!important;}
+#earlyFinishModal #earlyFinishReason{
+  width:100%!important;min-height:126px!important;box-sizing:border-box!important;padding:15px 17px!important;border-radius:18px!important;
+  border:2px solid #163d75!important;background:#fff!important;color:#17345f!important;font-size:13px!important;line-height:1.7!important;resize:vertical!important;
+}
+#earlyFinishModal #earlyFinishReason::placeholder{color:#8a8f99!important;}
+#earlyFinishModal .early-finish-counter{display:block!important;color:#697a8d!important;font-size:9px!important;text-align:start!important;}
+#earlyFinishModal .early-finish-counter b{color:#0b55d9!important;font-weight:950!important;}
+#earlyFinishModal .early-finish-actions{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:14px!important;margin-top:20px!important;padding-top:18px!important;border-top:1px solid #e5ecf4!important;
+}
+#earlyFinishModal .early-finish-actions .btn{min-width:145px!important;min-height:48px!important;border-radius:15px!important;font-size:10px!important;font-weight:900!important;box-shadow:none!important;}
+#earlyFinishModal .early-finish-actions .btn.ghost{background:#fff!important;color:#163d75!important;border:1.5px solid #163d75!important;}
+#earlyFinishModal .early-finish-actions .btn.danger{background:#ad2348!important;color:#fff!important;border:1.5px solid #ad2348!important;}
+
+@media(max-width:850px){
+  #addActivityModal .activity-entry-heading{grid-template-columns:1fr auto!important;}
+  #addActivityModal .activity-entry-mode-switch{grid-column:1/-1!important;width:100%!important;}
+  #addActivityModal .activity-entry-mode-btn{flex:1!important;}
+  #addActivityModal .activity-entry-mode-note{align-items:flex-start!important;flex-direction:column!important;}
+}
+@media(max-width:700px){
+  #earlyFinishModal .early-finish-head{padding:13px 13px 0!important;}
+  #earlyFinishModal .early-finish-brandline{padding:15px!important;border-radius:17px!important;}
+  #earlyFinishModal .early-finish-brandtext strong{font-size:17px!important;}
+  #earlyFinishModal .early-finish-body{padding:20px 16px 22px!important;}
+  #earlyFinishModal .early-finish-actions{flex-direction:column!important;}
+  #earlyFinishModal .early-finish-actions .btn{width:100%!important;}
+}
